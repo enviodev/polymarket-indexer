@@ -1,0 +1,26 @@
+type Wallet {
+  "wallet address"
+  id: ID!
+  "signer address"
+  signer: String!
+  "'proxy' or 'safe'"
+  walletType: WalletType!
+  "USDC.e balance"
+  balance: BigInt!
+  "Last transfer timestamp"
+  lastTransfer: Int!
+  "Creation timestamp"
+  createdAt: Int!
+}
+
+enum WalletType {
+  PROXY
+  SAFE
+}
+
+type GlobalUSDCBalance {
+  "Empty string"
+  id: ID!
+  "Global USDC.e balance"
+  balance: BigInt!
+}
