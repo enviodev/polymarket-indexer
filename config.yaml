@@ -7,22 +7,39 @@ networks:
     contracts:
       - name: USDC
         address: 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 # USDC
-        handler: src/USDC.ts
+        handler: src/walletHandlers/USDC.ts
         start_block: 5013591
         events:
           - event: Transfer(address indexed from, address indexed to, uint256 value)
       - name: SafeProxyFactory
         address: 0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b # Polymarket Safe Factory
-        handler: src/SafeProxyFactory.ts
+        handler: src/walletHandlers/SafeProxyFactory.ts
         start_block: 19426226
         events:
           - event: ProxyCreation(address proxy, address owner)
       - name: RelayHub
         address: 0xD216153c06E857cD7f72665E0aF1d7D82172F494 # Polymarket Relay Hub
-        handler: src/RelayHub.ts
+        handler: src/walletHandlers/RelayHub.ts
         start_block: 3764531
         events:
           - event: TransactionRelayed(address indexed relay, address indexed from, address indexed to, bytes4 selector, uint8 status, uint256 charge)
+      - name: UmaSportsOracle
+        address: 0xb21182d0494521Cf45DbbeEbb5A3ACAAb6d22093 # Polymarket UMA Sports Oracle
+        handler: src/umaSportsOracleHandlers/UmaSportsOracle.ts
+        abi_file_path: src/abis/UmaSportsOracle.json
+        start_block: 68931384
+        events:
+          - event: GameCreated
+          - event: GameSettled
+          - event: GameEmergencySettled
+          - event: GameCanceled
+          - event: GamePaused
+          - event: GameUnpaused
+          - event: MarketCreated
+          - event: MarketPaused
+          - event: MarketUnpaused
+          - event: MarketResolved
+          - event: MarketEmergencyResolved
 
 unordered_multichain_mode: true
 preload_handlers: true

@@ -1,3 +1,7 @@
+#######################################################
+# Entity Related to Wallet Indexer
+#######################################################
+
 type Wallet {
   "wallet address"
   id: ID!
@@ -14,8 +18,8 @@ type Wallet {
 }
 
 enum WalletType {
-  PROXY
-  SAFE
+  Proxy
+  Safe
 }
 
 type GlobalUSDCBalance {
@@ -23,4 +27,66 @@ type GlobalUSDCBalance {
   id: ID!
   "Global USDC.e balance"
   balance: BigInt!
+}
+
+#######################################################
+# Entity Related to UMA Sports Oracle
+#######################################################
+
+enum Ordering {
+  Home
+  Away
+}
+
+enum GameState {
+  Created
+  Settled
+  Canceled
+  Paused
+  EmergencySettled
+}
+
+type Game {
+  "The Game ID"
+  id: ID!
+  "Ancillary Data"
+  ancillaryData: String!
+  "The ordering of the game"
+  ordering: Ordering!
+  "The state of the game"
+  state: GameState!
+  "The score of the home team"
+  homeScore: BigInt!
+  "The score of the away team"
+  awayScore: BigInt!
+}
+
+enum MarketState {
+  Created
+  Resolved
+  Paused
+  EmergencyResolved
+}
+
+enum MarketType {
+  moneyline
+  spreads
+  totals
+}
+
+type Market {
+  "The Market Id"
+  id: ID!
+  "The Game Id the Market is linked to"
+  gameId: String!
+  "The state of the Market"
+  state: MarketState!
+  "The Market type"
+  marketType: String!
+  "The underdog of the Market, must be home or away, used for Spreads"
+  underdog: String!
+  "The line of Market, used for Spreads and Totals"
+  line: BigInt!
+  "The payouts set when the Market is resolved"
+  payouts: [BigInt!]!
 }

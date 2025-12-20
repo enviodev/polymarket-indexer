@@ -8,7 +8,7 @@ SafeProxyFactory.ProxyCreation.handler(async ({ event, context }) => {
     const newWallet: Wallet = {
       id: event.params.proxy,
       signer: event.params.owner,
-      walletType: "SAFE",
+      walletType: "Safe",
       balance: BigInt(0),
       lastTransfer: 0,
       createdAt: event.block.timestamp,
