@@ -29,11 +29,11 @@ pnpm codegen
 ## Subgraphs Migration Status
 
 - [x] Wallet Subgraph
-- [ ] Sports Oracle Subgraph (work in progress)
-- [ ] PNL Subgraph
-- [ ] Order Book Subgraph
+- [x] Sports Oracle Subgraph
+- [ ] Order Book Subgraph (work in progress)
 - [ ] OI Subgraph
 - [ ] FPMM Subgraph
+- [ ] PNL Subgraph
 
 ## Tasks
 

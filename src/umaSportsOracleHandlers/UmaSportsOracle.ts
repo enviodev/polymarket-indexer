@@ -2,7 +2,7 @@ import { UmaSportsOracle, Game } from "generated";
 import type { handlerContext, Market } from "generated";
 
 // Helper: fetch existing game, log and return null if missing.
-async function getAndSet(
+async function getAndSetGame(
   gameId: string,
   context: handlerContext,
   mutate: (g: Game) => Game | Promise<Game>,
@@ -17,13 +17,8 @@ async function getAndSet(
   context.Game.set(updated);
 }
 
-// Helper for creating a game if it doesn't already exist.
-async function createGame(
-  gameId: string,
-  ancillaryData: string,
-  ordering: number | string,
-  context: handlerContext
-) {
+UmaSportsOracle.GameCreated.handler(async ({ event, context }) => {
+  const { gameId, ancillaryData, ordering } = event.params;
   const existing = await context.Game.get(gameId);
   if (existing) {
     context.log.warn(
@@ -42,16 +37,11 @@ async function createGame(
   };
 
   context.Game.set(game);
-}
-
-UmaSportsOracle.GameCreated.handler(async ({ event, context }) => {
-  const { gameId, ancillaryData, ordering } = event.params;
-  await createGame(gameId, ancillaryData, Number(ordering), context);
 });
 
 UmaSportsOracle.GameSettled.handler(async ({ event, context }) => {
   const { away, gameId, home } = event.params;
-  await getAndSet(
+  await getAndSetGame(
     gameId,
     context,
     (g) => ({
@@ -66,7 +56,7 @@ UmaSportsOracle.GameSettled.handler(async ({ event, context }) => {
 
 UmaSportsOracle.GameCanceled.handler(async ({ event, context }) => {
   const { gameId } = event.params;
-  await getAndSet(
+  await getAndSetGame(
     gameId,
     context,
     (g) => ({ ...g, state: "Canceled" }),
@@ -76,7 +66,7 @@ UmaSportsOracle.GameCanceled.handler(async ({ event, context }) => {
 
 UmaSportsOracle.GamePaused.handler(async ({ event, context }) => {
   const { gameId } = event.params;
-  await getAndSet(
+  await getAndSetGame(
     gameId,
     context,
     (g) => ({ ...g, state: "Paused" }),
@@ -86,7 +76,7 @@ UmaSportsOracle.GamePaused.handler(async ({ event, context }) => {
 
 UmaSportsOracle.GameEmergencySettled.handler(async ({ event, context }) => {
   const { away, gameId, home } = event.params;
-  await getAndSet(
+  await getAndSetGame(
     gameId,
     context,
     (g) => ({
@@ -101,7 +91,7 @@ UmaSportsOracle.GameEmergencySettled.handler(async ({ event, context }) => {
 
 UmaSportsOracle.GameUnpaused.handler(async ({ event, context }) => {
   const { gameId } = event.params;
-  await getAndSet(
+  await getAndSetGame(
     gameId,
     context,
     (g) => ({ ...g, state: "Created" }),
@@ -140,4 +130,65 @@ UmaSportsOracle.MarketCreated.handler(async ({ event, context }) => {
     payouts: [],
   };
   context.Market.set(newMarket);
+});
+
+async function getAndSetMarket(
+  marketId: string,
+  context: handlerContext,
+  mutate: (m: Market) => Market | Promise<Market>,
+  missingMessage: string
+) {
+  const existing = await context.Market.get(marketId);
+  if (!existing) {
+    context.log.error(missingMessage);
+    return;
+  }
+  const updated = await mutate(existing);
+  context.Market.set(updated);
+}
+
+UmaSportsOracle.MarketResolved.handler(async ({ event, context }) => {
+  const { marketId, payouts } = event.params;
+
+  await getAndSetMarket(
+    marketId,
+    context,
+    (m) => ({
+      ...m,
+      state: "Resolved",
+      payouts: payouts.map((p) => BigInt(p)),
+    }),
+    `MarketResolved event received, but market ${marketId} does not exist. Skipping.`
+  );
+});
+UmaSportsOracle.MarketEmergencyResolved.handler(async ({ event, context }) => {
+  const { marketId, payouts } = event.params;
+  await getAndSetMarket(
+    marketId,
+    context,
+    (m) => ({
+      ...m,
+      state: "EmergencyResolved",
+      payouts: payouts.map((p) => BigInt(p)),
+    }),
+    `MarketEmergencyResolved event received, but market ${marketId} does not exist. Skipping.`
+  );
+});
+UmaSportsOracle.MarketPaused.handler(async ({ event, context }) => {
+  const { marketId } = event.params;
+  await getAndSetMarket(
+    marketId,
+    context,
+    (m) => ({ ...m, state: "Paused" }),
+    `MarketPaused event received, but market ${marketId} does not exist. Skipping.`
+  );
+});
+UmaSportsOracle.MarketUnpaused.handler(async ({ event, context }) => {
+  const { marketId } = event.params;
+  await getAndSetMarket(
+    marketId,
+    context,
+    (m) => ({ ...m, state: "Created" }),
+    `MarketUnpaused event received, but market ${marketId} does not exist. Skipping.`
+  );
 });
