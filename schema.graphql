@@ -128,9 +128,11 @@ type OrderFilledEvent {
 }
 
 # Exchange OrdersMatched event stored directly
-type OrdersMatchedEvent @entity {
-  "Transaction Hash"
+type OrdersMatchedEvent {
+  "TransactionHash_LogIndex"
   id: ID!
+  "Transaction hash"
+  hash: String!
   "Timestamp at which filled occurred"
   timestamp: Int!
   "Maker asset Id"
@@ -143,7 +145,7 @@ type OrdersMatchedEvent @entity {
   takerAmountFilled: BigInt!
 }
 
-type Orderbook @entity {
+type Orderbook  {
   "Token Id"
   id: ID!
   "Number of trades of any kind against this order book"
@@ -167,7 +169,7 @@ type Orderbook @entity {
 }
 
 # Exchange: all trades aggregated
-type OrdersMatchedGlobal @entity {
+type OrdersMatchedGlobal {
   "ID is empty string, this is a singleton"
   id: ID!
 

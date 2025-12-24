@@ -30,8 +30,8 @@ pnpm codegen
 
 - [x] Wallet Subgraph
 - [x] Sports Oracle Subgraph
-- [ ] Order Book Subgraph (work in progress)
-- [ ] OI Subgraph
+- [x] Order Book Subgraph
+- [ ] OI Subgraph (work in progress)
 - [ ] FPMM Subgraph
 - [ ] PNL Subgraph
 
