@@ -1,11 +1,12 @@
-import { SafeProxyFactory, Wallet } from "generated";
+import { SafeProxyFactory } from "generated";
+import type { Wallet_t } from "generated/src/db/Entities.gen";
 
 SafeProxyFactory.ProxyCreation.handler(async ({ event, context }) => {
   const wallet = await context.Wallet.get(event.params.proxy);
 
   if (!wallet) {
     // this will save us few DB writes
-    const newWallet: Wallet = {
+    const newWallet: Wallet_t = {
       id: event.params.proxy,
       signer: event.params.owner,
       walletType: "Safe",

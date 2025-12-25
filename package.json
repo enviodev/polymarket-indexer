@@ -5,7 +5,7 @@
     "clean": "tsc --clean",
     "build": "tsc --build",
     "watch": "tsc --watch",
-    "mocha": "ts-mocha test/**/*.ts",
+    "mocha": "tsc --noEmit && NODE_OPTIONS='--no-warnings --import tsx' mocha --exit test/**/*.ts",
     "codegen": "envio codegen",
     "dev": "envio dev",
     "start": "envio start",
@@ -17,17 +17,18 @@
     "@types/node": "20.8.8",
     "chai": "4.3.10",
     "mocha": "10.2.0",
-    "ts-mocha": "^10.0.0",
-    "typescript": "5.2.2"
+    "tsx": "4.21.0",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-    "envio": "2.32.3",
+    "envio": "3.0.0-alpha.4",
     "viem": "^2.43.2"
   },
   "optionalDependencies": {
     "generated": "./generated"
   },
+  "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   }
 }

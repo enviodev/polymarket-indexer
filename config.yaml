@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: erc20indexer
 description: ERC-20 indexer
-networks:
+chains:
   - id: 137 # Polygon
     start_block: 3764531
     contracts:
@@ -56,7 +56,4 @@ networks:
           - event: OrdersMatched
             field_selection: *tx_hash_only
           - event: TokenRegistered
-
-unordered_multichain_mode: true
-preload_handlers: true
 address_format: lowercase

@@ -1,12 +1,5 @@
-import {
-  BigDecimal,
-  Exchange,
-  orderbook,
-  Orderbook,
-  OrderFilledEvent,
-  OrdersMatchedEvent,
-} from "generated";
-import { MarketData_t } from "generated/src/db/Entities.gen";
+import { BigDecimal, Exchange } from "generated";
+import type { Orderbook_t, OrderFilledEvent_t } from "generated/src/db/Entities.gen";
 
 const BIG_ZERO = 0n;
 const COLLATERAL_SCALE_DEC = new BigDecimal(10).pow(6);
@@ -36,9 +29,9 @@ Exchange.OrderFilled.handler(async ({ event, context }) => {
   // -----------------------------
   // Store order filled event
   // -----------------------------
-  const orderFilled: OrderFilledEvent = {
+  const orderFilled: OrderFilledEvent_t = {
     id: `${txHash}_${orderHash}`,
-    transactionHash: txHash,
+    hash: txHash,
     timestamp,
     orderHash,
     maker,
@@ -55,7 +48,7 @@ Exchange.OrderFilled.handler(async ({ event, context }) => {
   // -----------------------------
   // Update orderbook
   // -----------------------------
-  const baseOrderbook: Orderbook = {
+  const baseOrderbook: Orderbook_t = {
     id: tokenId,
     tradesQuantity: 0n,
     buysQuantity: 0n,
@@ -92,7 +85,7 @@ Exchange.OrderFilled.handler(async ({ event, context }) => {
             existing.scaledCollateralSellVolume.div(COLLATERAL_SCALE_DEC),
         };
 
-  const updatedOrderbook: orderbook = {
+  const updatedOrderbook: Orderbook_t = {
     ...existing,
     ...commonUpdates,
     ...sideUpdates,

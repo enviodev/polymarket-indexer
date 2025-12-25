@@ -1,12 +1,13 @@
-import { UmaSportsOracle, Game } from "generated";
+import { UmaSportsOracle } from "generated";
 import type { handlerContext, Market } from "generated";
-import { MarketType_t } from "generated/src/db/Enums.gen";
+import type { Game_t } from "generated/src/db/Entities.gen";
+import type { MarketType_t } from "generated/src/db/Enums.gen";
 
 // Helper: fetch existing game, log and return null if missing.
 async function getAndSetGame(
   gameId: string,
   context: handlerContext,
-  mutate: (g: Game) => Game | Promise<Game>,
+  mutate: (g: Game_t) => Game_t | Promise<Game_t>,
   missingMessage: string
 ) {
   const existing = await context.Game.get(gameId);
@@ -28,7 +29,7 @@ UmaSportsOracle.GameCreated.handler(async ({ event, context }) => {
     return;
   }
 
-  const game: Game = {
+  const game: Game_t = {
     id: gameId,
     ancillaryData,
     ordering: Number(ordering) === 0 ? "Home" : "Away",
@@ -184,6 +185,7 @@ UmaSportsOracle.MarketPaused.handler(async ({ event, context }) => {
     `MarketPaused event received, but market ${marketId} does not exist. Skipping.`
   );
 });
+
 UmaSportsOracle.MarketUnpaused.handler(async ({ event, context }) => {
   const { marketId } = event.params;
   await getAndSetMarket(

@@ -108,7 +108,7 @@ type OrderFilledEvent {
   "Transaction hash + Order hash"
   id: ID!
   "Transaction hash"
-  transactionHash: String!
+  hash: String!
   "Timestamp at which filled occurred"
   timestamp: Int!
   orderHash: String!
