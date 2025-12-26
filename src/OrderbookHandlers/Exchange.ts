@@ -6,6 +6,7 @@ const COLLATERAL_SCALE_DEC = new BigDecimal(10).pow(6);
 const ORDERS_MATCHED_GLOBAL_ID = "OrdersMatchedGlobal";
 
 Exchange.OrderFilled.handler(async ({ event, context }) => {
+  BigDecimal
   const {
     fee,
     maker,
@@ -54,7 +55,7 @@ Exchange.OrderFilled.handler(async ({ event, context }) => {
     buysQuantity: 0n,
     sellsQuantity: 0n,
     collateralVolume: 0n,
-    scaledCollateralVolume: BigDecimal(0),
+    scaledCollateralVolume: new BigDecimal(0),
     collateralBuyVolume: 0n,
     scaledCollateralBuyVolume: BigDecimal(0),
     collateralSellVolume: 0n,

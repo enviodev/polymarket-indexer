@@ -56,4 +56,26 @@ chains:
           - event: OrdersMatched
             field_selection: *tx_hash_only
           - event: TokenRegistered
+      - name: ConditionalTokens
+        address: 0x4D97DCd97eC945f40cF65F87097ACe5EA0476045
+        handler: src/conditionalTokensHandlers/ConditionalTokens.ts
+        abi_file_path: src/abis/ConditionalTokens.json
+        start_block: 4023686
+        events:
+          - event: PositionSplit
+          - event: PositionsMerge
+          - event: PayoutRedemption
+          - event: ConditionPreparation
+      - name: NegRiskAdapter
+        address: 0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296
+        handler: src/negRiskAdapterHandlers/NegRiskAdapter.ts
+        abi_file_path: src/abis/NegRiskAdapter.json
+        start_block: 50505403
+        events:
+          - event: PositionSplit
+          - event: PositionsMerge
+          - event: PayoutRedemption
+          - event: PositionsConverted
+          - event: MarketPrepared
+          - event: QuestionPrepared
 address_format: lowercase
