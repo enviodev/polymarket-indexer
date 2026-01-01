@@ -1,5 +1,13 @@
 import { NegRiskAdapter } from "generated";
-import { updateOpenInterest } from "./utils";
+import {
+  getConditionId,
+  getNegRiskConditionId,
+  getNegRiskQuestionId,
+  indexSetContains,
+  updateGlobalOpenInterest,
+  updateMarketOpenInterest,
+  updateOpenInterest,
+} from "./utils";
 
 NegRiskAdapter.PositionSplit.handler(async ({ event, context }) => {
   const { amount, conditionId } = event.params;
@@ -54,4 +62,62 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
 
   const negRiskEvent = await context.NegRiskEvent.get(marketId);
   if (!negRiskEvent) return;
+
+  const questionCount = negRiskEvent.questionCount;
+
+  let conditionIds: string[] = [];
+
+  for (let i = 0; i < questionCount; i++) {
+    if (indexSetContains(indexSet, i)) {
+      conditionIds.push(getNegRiskConditionId(marketId as `0x${string}`, i));
+    }
+  }
+
+  let noCount = conditionIds.length;
+  if (noCount > 1) {
+    let amount = event.params.amount;
+    let feeAmount = 0n;
+    let multiplier = BigInt(noCount - 1);
+    let divisor = BigInt(noCount);
+
+    if (negRiskEvent.feeBps > 0) {
+      feeAmount = (amount * BigInt(negRiskEvent.feeBps)) / 10_000n;
+      amount -= feeAmount;
+
+      let feeReleasedToVault = -(feeAmount * multiplier);
+      for (let i = 0; i < noCount; i++) {
+        let conditionId = conditionIds[i];
+        if (conditionId != undefined) {
+          await updateMarketOpenInterest(
+            feeReleasedToVault / divisor,
+            conditionId,
+            context
+          );
+        } else {
+          context.log.error(
+            `NegRiskAdapter.PositionsConverted: Missing conditionId for marketId ${marketId} at index ${i}`
+          );
+        }
+      }
+
+      await updateGlobalOpenInterest(feeAmount, context);
+    }
+
+    let collateralReleasedToUser = -(amount * multiplier);
+    for (let i = 0; i < noCount; i++) {
+      let conditionId = conditionIds[i];
+      if (conditionId != undefined) {
+        await updateMarketOpenInterest(
+          collateralReleasedToUser / divisor,
+          conditionId,
+          context
+        );
+      } else {
+        context.log.error(
+          `NegRiskAdapter.PositionsConverted: Missing conditionId for marketId ${marketId} at index ${i}`
+        );
+      }
+    }
+    await updateGlobalOpenInterest(collateralReleasedToUser, context);
+  }
 });

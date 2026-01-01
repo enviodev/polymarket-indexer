@@ -2,7 +2,7 @@
 
 _Please check the [documentation website](https://docs.envio.dev) for a complete guide on all [Envio](https://envio.dev) indexer features._
 
-This indexer is still a work in progress. Do not use it in production. It is meant only as a reference.
+**This indexer is still a work in progress. Do not use it in production. It is meant only as a reference.**
 
 This indexer is built to index events emitted from contracts related to Polymarket. It is created by taking reference from the [Polymarket Subgraph repo](https://github.com/Polymarket/polymarket-subgraph).
 
@@ -31,12 +31,17 @@ pnpm codegen
 - [x] Wallet Subgraph
 - [x] Sports Oracle Subgraph
 - [x] Order Book Subgraph
-- [ ] OI Subgraph (work in progress)
-- [ ] FPMM Subgraph
+- [x] OI Subgraph 
+- [ ] FPMM Subgraph (work in progress)
 - [ ] Activity Subgraph
 - [ ] PNL Subgraph
 
 ## Tasks
 
-- [ ] Migrate all subgraphs
+- [ ] Migrate all subgraphs (work in progress)
 - [ ] Validate data against the Polymarket indexer
+
+
+## Notes
+
+This indexer is a work in progress, and some parts of the logic are still being migrated. Data validation has been done for a few subgraphs so far, and we’ll be expanding correctness checks after the main migration is finished.
