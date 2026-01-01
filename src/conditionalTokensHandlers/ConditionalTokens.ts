@@ -1,6 +1,5 @@
 import { ConditionalTokens, type HandlerContext } from "generated";
-
-const GLOBAL_OPEN_INTEREST_ID = "GlobalOpenInterest";
+import { updateOpenInterest } from "./utils";
 
 ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
   // check if condition exists if not skip it
@@ -17,8 +16,7 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
     return;
 
   // update open interest, this split increases the open interest
-  await updateGlobalOpenInterest(amount, context);
-  await updateMarketOpenInterest(amount, conditionId, context);
+  await updateOpenInterest(amount, conditionId, context);
 });
 
 ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
@@ -36,8 +34,7 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
     return;
 
   // update open interest, this merge decreases the open interest
-  await updateGlobalOpenInterest(-amount, context);
-  await updateMarketOpenInterest(-amount, conditionId, context);
+  await updateOpenInterest(-amount, conditionId, context);
 });
 
 ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
@@ -54,8 +51,7 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
     return;
 
   // update open interest, this redemption decreases the open interest
-  await updateGlobalOpenInterest(-payout, context);
-  await updateMarketOpenInterest(-payout, conditionId, context);
+  await updateOpenInterest(-payout, conditionId, context);
 });
 
 ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
@@ -67,38 +63,3 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
     id: conditionId,
   });
 });
-
-async function updateMarketOpenInterest(
-  amount: bigint,
-  conditionId: string,
-  context: HandlerContext
-) {
-  let marketOpenInterest = await context.MarketOpenInterest.getOrCreate({
-    id: conditionId,
-    amount: 0n,
-  });
-
-  marketOpenInterest = {
-    ...marketOpenInterest,
-    amount: marketOpenInterest.amount + amount,
-  };
-
-  context.MarketOpenInterest.set(marketOpenInterest);
-}
-
-async function updateGlobalOpenInterest(
-  amount: bigint,
-  context: HandlerContext
-) {
-  let globalOpenInterest = await context.GlobalOpenInterest.getOrCreate({
-    id: GLOBAL_OPEN_INTEREST_ID,
-    amount: 0n,
-  });
-
-  globalOpenInterest = {
-    ...globalOpenInterest,
-    amount: globalOpenInterest.amount + amount,
-  };
-
-  context.GlobalOpenInterest.set(globalOpenInterest);
-}

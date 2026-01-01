@@ -33,6 +33,7 @@ pnpm codegen
 - [x] Order Book Subgraph
 - [ ] OI Subgraph (work in progress)
 - [ ] FPMM Subgraph
+- [ ] Activity Subgraph
 - [ ] PNL Subgraph
 
 ## Tasks
