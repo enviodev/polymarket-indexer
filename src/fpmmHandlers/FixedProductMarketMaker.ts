@@ -64,6 +64,29 @@ FixedProductMarketMaker.FPMMBuy.handler(async ({ event, context }) => {
     collateralScaleDec,
     "Buy"
   );
+
+  fpmm = updateFeeFields(fpmm, event.params.feeAmount, collateralScaleDec);
+
+  fpmm = {
+    ...fpmm,
+    tradesQuantity: increment(fpmm.tradesQuantity),
+    buysQuantity: increment(fpmm.buysQuantity),
+  };
+
+  context.FixedProductMarketMaker.set(fpmm);
+
+  // record buy transaction
+  context.FpmmTransaction.set({
+    id: getEventKey(event.transaction.hash, event.logIndex),
+    type: "Buy",
+    timestamp: event.block.timestamp,
+    market_id: event.srcAddress,
+    user: event.params.buyer,
+    tradeAmount: event.params.investmentAmount,
+    feeAmount: event.params.feeAmount,
+    outcomeIndex: BigInt(outcomeIndex),
+    outcomeTokensAmount: event.params.outcomeTokensBought,
+  });
 });
 
 function calculatePrices(amounts: bigint[]): BigDecimal[] {
@@ -197,7 +220,7 @@ function updateVolumes(
       ...fpmm,
       collateralBuyVolume: newBuySize,
       scaledCollateralBuyVolume: newBuySizeScaled,
-    }
+    };
   } else if (tradeType === "Sell") {
     let newSellSize = fpmm.collateralSellVolume + tradeSize;
     let newSellSizeScaled = BigDecimal(newSellSize.toString()).div(
@@ -207,8 +230,26 @@ function updateVolumes(
       ...fpmm,
       collateralSellVolume: newSellSize,
       scaledCollateralSellVolume: newSellSizeScaled,
-    }
+    };
   }
 
   return fpmm;
+}
+
+function updateFeeFields(
+  fpmm: FixedProductMarketMaker_t,
+  feeAmount: bigint,
+  collateralScale: BigDecimal
+): FixedProductMarketMaker_t {
+  const newFeeVolume = fpmm.feeVolume + feeAmount;
+
+  return {
+    ...fpmm,
+    feeVolume: newFeeVolume,
+    scaledFeeVolume: BigDecimal(newFeeVolume.toString()).div(collateralScale),
+  };
+}
+
+function increment(x: bigint): bigint {
+  return x + 1n;
 }
