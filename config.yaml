@@ -99,5 +99,6 @@ chains:
               transaction_fields:
                 - hash
           - event: FPMMSell
+            field_selection: *tx_hash_only
           - event: Transfer
 address_format: lowercase

@@ -1,4 +1,4 @@
-import { BigDecimal, TradeType } from "generated";
+import { BigDecimal /*, TradeType*/ } from "generated";
 import type { FixedProductMarketMaker_t } from "generated/src/db/Entities.gen";
 import { timestampToDay } from "./time";
 
@@ -7,7 +7,9 @@ function updateVolumes(
   timestamp: number,
   tradeSize: bigint,
   collateralScale: BigDecimal,
-  tradeType: TradeType
+  tradeType: "Buy" | "Sell"
+  // tradeType import from generated is not valid and that is throwing an error
+  // but I can see in index files of generated folder that there is a named export for TradeType
 ): FixedProductMarketMaker_t {
   fpmm = {
     ...fpmm,

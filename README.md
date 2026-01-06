@@ -45,6 +45,7 @@ pnpm codegen
 
 - [ ] Effects for fetching details about Collateral Token
 - [ ] Remove hardcoded return value from `getCollateralScale` in FPMM handler
+- [ ] Debug `TradeType` import in `updatedFields.ts`
 
 ## Notes
 

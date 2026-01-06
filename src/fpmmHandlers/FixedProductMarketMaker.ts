@@ -1,8 +1,4 @@
-import {
-  BigDecimal,
-  FixedProductMarketMaker,
-  type HandlerContext,
-} from "generated";
+import { BigDecimal, FixedProductMarketMaker } from "generated";
 
 import { increment } from "./utils/maths";
 import {
@@ -89,5 +85,80 @@ FixedProductMarketMaker.FPMMBuy.handler(async ({ event, context }) => {
     feeAmount: event.params.feeAmount,
     outcomeIndex: BigInt(outcomeIndex),
     outcomeTokensAmount: event.params.outcomeTokensBought,
+  });
+});
+
+FixedProductMarketMaker.FPMMSell.handler(async ({ event, context }) => {
+  let fpmmAddress = event.srcAddress;
+  let fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
+  if (!fpmm) {
+    context.log.error(
+      `cannot sell: FixedProductMarketMaker instance for ${fpmmAddress} not found`
+    );
+    return;
+  }
+
+  let oldAmounts = fpmm.outcomeTokenAmounts;
+  let returnAmountPlusFees = event.params.returnAmount + event.params.feeAmount;
+
+  let outcomeIndex = Number(event.params.outcomeIndex);
+  let newAmounts = new Array<bigint>(oldAmounts.length);
+  let amountsProduct = BigInt(1);
+
+  for (let i = 0; i < oldAmounts.length; i++) {
+    const old = oldAmounts[i];
+    if (old === undefined) {
+      // skip missing entries (or handle as needed)
+      continue;
+    }
+    const value: bigint =
+      i === outcomeIndex
+        ? old - returnAmountPlusFees + event.params.outcomeTokensSold
+        : old - returnAmountPlusFees;
+
+    newAmounts[i] = value;
+    amountsProduct *= value;
+  }
+
+  fpmm = {
+    ...fpmm,
+    outcomeTokenAmounts: newAmounts,
+    outcomeTokenPrices: calculatePrices(newAmounts),
+  };
+
+  let liquidityParameter = nthRoot(amountsProduct, oldAmounts.length, context);
+  let collateralScale = getCollateralScale(fpmm.collateralToken_id, context);
+  let collateralScaleDec = BigDecimal(collateralScale.toString());
+
+  fpmm = updateLiquidityFields(fpmm, liquidityParameter, collateralScaleDec);
+  fpmm = updateVolumes(
+    fpmm,
+    event.block.timestamp,
+    event.params.returnAmount,
+    collateralScaleDec,
+    "Sell"
+  );
+
+  fpmm = updateFeeFields(fpmm, event.params.feeAmount, collateralScaleDec);
+
+  fpmm = {
+    ...fpmm,
+    tradesQuantity: increment(fpmm.tradesQuantity),
+    sellsQuantity: increment(fpmm.sellsQuantity),
+  };
+
+  context.FixedProductMarketMaker.set(fpmm);
+
+  // record sell transaction
+  context.FpmmTransaction.set({
+    id: getEventId(event.transaction.hash, event.logIndex),
+    type: "Sell",
+    timestamp: event.block.timestamp,
+    market_id: event.srcAddress,
+    user: event.params.seller,
+    tradeAmount: event.params.returnAmount,
+    feeAmount: event.params.feeAmount,
+    outcomeIndex: BigInt(outcomeIndex),
+    outcomeTokensAmount: event.params.outcomeTokensSold,
   });
 });
