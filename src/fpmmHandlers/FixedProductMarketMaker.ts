@@ -162,3 +162,80 @@ FixedProductMarketMaker.FPMMSell.handler(async ({ event, context }) => {
     outcomeTokensAmount: event.params.outcomeTokensSold,
   });
 });
+
+FixedProductMarketMaker.FPMMFundingRemoved.handler(
+  async ({ event, context }) => {
+    let fpmmAddress = event.srcAddress;
+    let fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
+    if (!fpmm) {
+      context.log.error(
+        `cannot remove funding: FixedProductMarketMaker instance for ${fpmmAddress} not found`
+      );
+      return;
+    }
+
+    let oldAmounts = fpmm.outcomeTokenAmounts;
+    let amountsRemoved = event.params.amountsRemoved;
+    let newAmounts = new Array<bigint>(oldAmounts.length);
+    let amountsProduct = BigInt(1);
+
+    for (let i = 0; i < oldAmounts.length; i++) {
+      const old = oldAmounts[i];
+      const oldAmountsRemoved = amountsRemoved[i];
+      if (old === undefined || oldAmountsRemoved === undefined) {
+        // skip missing entries (or handle as needed)
+        continue;
+      }
+      const value: bigint = old - oldAmountsRemoved;
+
+      newAmounts[i] = value;
+      amountsProduct *= value;
+    }
+
+    fpmm = {
+      ...fpmm,
+      outcomeTokenAmounts: newAmounts,
+      outcomeTokenPrices: calculatePrices(newAmounts),
+    };
+
+    let liquidityParameter = nthRoot(
+      amountsProduct,
+      oldAmounts.length,
+      context
+    );
+    let collateralScale = getCollateralScale(fpmm.collateralToken_id, context);
+    let collateralScaleDec = BigDecimal(collateralScale.toString());
+
+    fpmm = updateLiquidityFields(fpmm, liquidityParameter, collateralScaleDec);
+
+    fpmm = {
+      ...fpmm,
+      totalSupply: fpmm.totalSupply - event.params.sharesBurnt,
+    };
+
+    if (fpmm.totalSupply === BigInt(0)) {
+      fpmm = {
+        ...fpmm,
+        outcomeTokenPrices: calculatePrices(newAmounts),
+      };
+    }
+
+    fpmm = {
+      ...fpmm,
+      liquidityRemoveQuantity: increment(fpmm.liquidityRemoveQuantity),
+    };
+
+    context.FixedProductMarketMaker.set(fpmm);
+
+    // record funding removed transaction
+    context.FpmmFundingRemoval.set({
+      id: event.transaction.hash,
+      timestamp: event.block.timestamp,
+      fpmm_id: event.srcAddress,
+      funder: event.params.funder,
+      amountsRemoved: event.params.amountsRemoved,
+      collateralRemoved: event.params.collateralRemovedFromFeePool,
+      sharesBurnt: event.params.sharesBurnt,
+    });
+  }
+);

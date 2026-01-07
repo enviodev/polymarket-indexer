@@ -93,11 +93,13 @@ chains:
         abi_file_path: src/abis/FixedProductMarketMaker.json
         events:
           - event: FPMMFundingAdded
-          - event: FPMMFundingRemoved
-          - event: FPMMBuy
             field_selection: &tx_hash_only
               transaction_fields:
                 - hash
+          - event: FPMMFundingRemoved
+            field_selection: *tx_hash_only
+          - event: FPMMBuy
+            field_selection: *tx_hash_only
           - event: FPMMSell
             field_selection: *tx_hash_only
           - event: Transfer

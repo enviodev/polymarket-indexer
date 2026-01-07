@@ -347,3 +347,19 @@ type FpmmTransaction {
   "Amount of outcome tokens being bought or sold"
   outcomeTokensAmount: BigInt!
 }
+
+type FpmmFundingRemoval {
+  "Transaction Hash"
+  id: ID!
+  "Timestamp at which funding removal occurred"
+  timestamp: Int!
+  "FPMM to which funding is being removed"
+  fpmm: FixedProductMarketMaker!
+  "Account removing funding"
+  funder: String!
+  "Outcome tokens amounts removed from FPMM"
+  amountsRemoved: [BigInt!]!
+  collateralRemoved: BigInt!
+  "Liquidity shares burned by funder"
+  sharesBurnt: BigInt!
+}
