@@ -1,6 +1,6 @@
 import { BigDecimal, FixedProductMarketMaker } from "generated";
 
-import { increment } from "./utils/maths";
+import { increment, max } from "./utils/maths";
 import {
   updateFeeFields,
   updateLiquidityFields,
@@ -10,6 +10,7 @@ import { getEventId } from "./utils/getEventId";
 import { getCollateralScale } from "./utils/collateralToken";
 import { calculatePrices } from "./utils/calculatePrices";
 import { nthRoot } from "./utils/nthRoot";
+import type { FpmmFundingAddition_t } from "generated/src/db/Entities.gen";
 
 FixedProductMarketMaker.FPMMBuy.handler(async ({ event, context }) => {
   let fpmmAddress = event.srcAddress;
@@ -239,3 +240,88 @@ FixedProductMarketMaker.FPMMFundingRemoved.handler(
     });
   }
 );
+
+FixedProductMarketMaker.FPMMFundingAdded.handler(async ({ event, context }) => {
+  let fpmmAddress = event.srcAddress;
+  let fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
+  if (!fpmm) {
+    context.log.error(
+      `cannot add funding: FixedProductMarketMaker instance for ${fpmmAddress} not found`
+    );
+    return;
+  }
+
+  let oldAmounts = fpmm.outcomeTokenAmounts;
+  let amountsAdded = event.params.amountsAdded;
+  let newAmounts = new Array<bigint>(oldAmounts.length);
+  let amountsProduct = BigInt(1);
+
+  for (let i = 0; i < oldAmounts.length; i++) {
+    const old = oldAmounts[i];
+    const oldAmountsAdded = amountsAdded[i];
+    if (old === undefined || oldAmountsAdded === undefined) {
+      // skip missing entries (or handle as needed)
+      continue;
+    }
+    const value: bigint = old + oldAmountsAdded;
+
+    newAmounts[i] = value;
+    amountsProduct *= value;
+  }
+
+  fpmm = {
+    ...fpmm,
+    outcomeTokenAmounts: newAmounts,
+  };
+
+  let liquidityParameter = nthRoot(amountsProduct, oldAmounts.length, context);
+  let collateralScale = getCollateralScale(fpmm.collateralToken_id, context);
+  let collateralScaleDec = BigDecimal(collateralScale.toString());
+  fpmm = updateLiquidityFields(fpmm, liquidityParameter, collateralScaleDec);
+
+  fpmm = {
+    ...fpmm,
+    totalSupply: fpmm.totalSupply + event.params.sharesMinted,
+  };
+
+  if (fpmm.totalSupply === event.params.sharesMinted) {
+    fpmm = {
+      ...fpmm,
+      outcomeTokenPrices: calculatePrices(newAmounts),
+    };
+  }
+
+  fpmm = {
+    ...fpmm,
+    liquidityAddQuantity: increment(fpmm.liquidityAddQuantity),
+  };
+
+  context.FixedProductMarketMaker.set(fpmm);
+
+  // record funding added transaction
+  let fundingAdditionEntity: FpmmFundingAddition_t = {
+    id: event.transaction.hash,
+    timestamp: event.block.timestamp,
+    fpmm_id: event.srcAddress,
+    funder: event.params.funder,
+    amountsAdded: event.params.amountsAdded,
+    amountsRefunded: [0n],
+    sharesMinted: event.params.sharesMinted,
+  };
+
+  let amountsAddedArr = event.params.amountsAdded;
+  let addedFunds = max(amountsAddedArr);
+  let amountsRefunded = new Array<bigint>(amountsAddedArr.length);
+  for (let i = 0; i < amountsAddedArr.length; i++) {
+    let x = amountsAddedArr[i];
+    if (x === undefined) {
+      continue;
+    }
+    amountsRefunded[i] = addedFunds - x;
+  }
+
+  context.FpmmFundingAddition.set({
+    ...fundingAdditionEntity,
+    amountsRefunded: amountsRefunded,
+  });
+});

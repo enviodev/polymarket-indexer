@@ -363,3 +363,20 @@ type FpmmFundingRemoval {
   "Liquidity shares burned by funder"
   sharesBurnt: BigInt!
 }
+
+type FpmmFundingAddition {
+  "Transaction Hash"
+  id: ID!
+  "Timestamp at which funding addition occurred"
+  timestamp: Int!
+  "FPMM to which funding is being added"
+  fpmm: FixedProductMarketMaker!
+  "Address adding funding"
+  funder: String!
+  "Outcome tokens amounts added to FPMM"
+  amountsAdded: [BigInt!]!
+  "Outcome tokens amounts refunded to funder"
+  amountsRefunded: [BigInt!]!
+  "Liquidity shares minted to funder"
+  sharesMinted: BigInt!
+}
