@@ -312,7 +312,7 @@ type FixedProductMarketMaker {
 }
 
 type FpmmPoolMembership {
-  "funder address + pool address"
+  "funder address _ pool address"
   id: ID!
   "Market to which funder is providing funding"
   pool: FixedProductMarketMaker!

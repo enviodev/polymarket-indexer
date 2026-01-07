@@ -11,6 +11,7 @@ import { getCollateralScale } from "./utils/collateralToken";
 import { calculatePrices } from "./utils/calculatePrices";
 import { nthRoot } from "./utils/nthRoot";
 import type { FpmmFundingAddition_t } from "generated/src/db/Entities.gen";
+import { FpmmFundingAddition } from "generated/src/db/Entities.res.mjs";
 
 FixedProductMarketMaker.FPMMBuy.handler(async ({ event, context }) => {
   let fpmmAddress = event.srcAddress;
@@ -324,4 +325,35 @@ FixedProductMarketMaker.FPMMFundingAdded.handler(async ({ event, context }) => {
     ...fundingAdditionEntity,
     amountsRefunded: amountsRefunded,
   });
+});
+
+FixedProductMarketMaker.Transfer.handler(async ({ event, context }) => {
+  let fpmmAddress = event.srcAddress;
+  let fromAddress = event.params.from;
+  let toAddress = event.params.to;
+  let sharesAmount = event.params.value;
+
+  const zeroAddress = "0x0000000000000000000000000000000000000000";
+  try {
+    if (fromAddress != zeroAddress) {
+      let fromMembership = await context.FpmmPoolMembership.getOrThrow(
+        `${fpmmAddress}_${fromAddress}`
+      );
+      context.FpmmPoolMembership.set({
+        ...fromMembership,
+        amount: fromMembership.amount - sharesAmount,
+      });
+    }
+    if (toAddress != zeroAddress) {
+      let toMembership = await context.FpmmPoolMembership.getOrThrow(
+        `${fpmmAddress}_${toAddress}`
+      );
+      context.FpmmPoolMembership.set({
+        ...toMembership,
+        amount: toMembership.amount + sharesAmount,
+      });
+    }
+  } catch (error) {
+    context.log.error(`Error updating FpmmPoolMembership: ${error}`);
+  }
 });

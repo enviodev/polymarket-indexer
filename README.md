@@ -32,8 +32,8 @@ pnpm codegen
 - [x] Sports Oracle Subgraph
 - [x] Order Book Subgraph
 - [x] OI Subgraph 
-- [ ] FPMM Subgraph (work in progress)
-- [ ] Activity Subgraph
+- [x] FPMM Subgraph 
+- [ ] Activity Subgraph (work in progress)
 - [ ] PNL Subgraph
 
 ## Tasks
