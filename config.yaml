@@ -78,11 +78,17 @@ chains:
         start_block: 50505403
         events:
           - event: PositionSplit
+            field_selection: *tx_hash_only
           - event: PositionsMerge
+            field_selection: *tx_hash_only
           - event: PayoutRedemption
+            field_selection: *tx_hash_only
           - event: PositionsConverted
+            field_selection: *tx_hash_only
           - event: MarketPrepared
+            field_selection: *tx_hash_only
           - event: QuestionPrepared
+            field_selection: *tx_hash_only
       - name: FixedProductMarketMakerFactory
         address: 0x8B9805A2f595B6705e74F7310829f2d299D21522
         handler: src/fpmmFactoryHandlers/FixedProductMarketMakerFactory.ts

@@ -31,10 +31,11 @@ pnpm codegen
 - [x] Wallet Subgraph
 - [x] Sports Oracle Subgraph
 - [x] Order Book Subgraph
-- [x] OI Subgraph 
-- [x] FPMM Subgraph 
+- [x] OI Subgraph
+- [x] FPMM Subgraph
 - [ ] Activity Subgraph (work in progress)
 - [ ] PNL Subgraph
+- [ ] Fee Module Subgraph (recently added. 8 Jan, 26)
 
 ## Tasks
 
