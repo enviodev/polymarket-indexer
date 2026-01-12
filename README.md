@@ -34,8 +34,8 @@ pnpm codegen
 - [x] OI Subgraph
 - [x] FPMM Subgraph
 - [x] Activity Subgraph
-- [ ] Fee Module Subgraph (work in progress)
-- [ ] PNL Subgraph
+- [x] Fee Module Subgraph 
+- [ ] PNL Subgraph (work in progress)
 
 ## Tasks
 

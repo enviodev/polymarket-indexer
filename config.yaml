@@ -112,4 +112,15 @@ chains:
           - event: FPMMSell
             field_selection: *tx_hash_only
           - event: Transfer
+      - name: FeeModule
+        address: [
+            0xE3f18aCc55091e2c48d883fc8C8413319d4Ab7b0, # FeeModule
+            0xB768891e3130F6dF18214Ac804d4DB76c2C37730, # NegRisk FeeModule
+          ]
+        handler: src/feeModuleHandlers/FeeModule.ts
+        abi_file_path: src/abis/FeeModule.json
+        start_block: 75253526
+        events:
+          - event: FeeRefunded
+            field_selection: *tx_hash_only
 address_format: lowercase
