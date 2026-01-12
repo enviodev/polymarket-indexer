@@ -22,10 +22,14 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
     await updateOpenInterest(amount, conditionId, context);
   }
 
+  // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/activity-subgraph/src/ConditionalTokensMapping.ts#L20-L55
   const stakeholder = event.params.stakeholder;
   const fpmm = await context.FixedProductMarketMaker.get(stakeholder);
 
+  // don't track merges within the market makers
   if (fpmm != undefined) return;
+  // don't track merges from neg risk adapter and exchange
+  // neg risk adpater merges are tracked in it's own handler
   if (
     [
       ...indexer.chains[137].NegRiskAdapter.addresses,
@@ -61,10 +65,14 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
     await updateOpenInterest(-amount, conditionId, context);
   }
 
+  // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/activity-subgraph/src/ConditionalTokensMapping.ts#L57-L92
   const stakeholder = event.params.stakeholder;
   const fpmm = await context.FixedProductMarketMaker.get(stakeholder);
 
+  // don't track merges within the market makers
   if (fpmm != undefined) return;
+  // don't track merges from neg risk adapter and exchange
+  // neg risk adpater merges are tracked in it's own handler
   if (
     [
       ...indexer.chains[137].NegRiskAdapter.addresses,
@@ -99,6 +107,8 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
     await updateOpenInterest(-payout, conditionId, context);
   }
 
+  // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/activity-subgraph/src/ConditionalTokensMapping.ts#L94-L122
+  // note: we are checking if condition exists in the starting part of the handler
   if (
     [...indexer.chains[137].NegRiskAdapter.addresses].includes(
       event.params.redeemer
@@ -116,6 +126,7 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
   });
 });
 
+// Activity Subgraph: https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/activity-subgraph/src/ConditionalTokensMapping.ts#L124-L154
 ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
   const { outcomeSlotCount, conditionId } = event.params;
 
@@ -125,7 +136,7 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
     id: conditionId,
   });
 
-  // Modify based on Acitivity Subgraph logic
+  // following part is extra in activity subgraph and not present in Open Interest subgraph
   const negRisk =
     event.params.oracle == indexer.chains[137].NegRiskAdapter.addresses[0];
 

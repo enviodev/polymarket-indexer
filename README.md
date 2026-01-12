@@ -33,9 +33,9 @@ pnpm codegen
 - [x] Order Book Subgraph
 - [x] OI Subgraph
 - [x] FPMM Subgraph
-- [ ] Activity Subgraph (work in progress)
+- [x] Activity Subgraph
+- [ ] Fee Module Subgraph (work in progress)
 - [ ] PNL Subgraph
-- [ ] Fee Module Subgraph (recently added. 8 Jan, 26)
 
 ## Tasks
 
@@ -56,3 +56,5 @@ pnpm codegen
 This indexer is a work in progress, and some parts of the logic are still being migrated. Data validation has been done for a few subgraphs so far, and we’ll be expanding correctness checks after the main migration is finished.
 
 - The `polymarket-subgraph` repo tracks `ConditionalTokens` event multiple times which different event handlers but in our case we have merged all those event handlers into one.
+
+- `activity-subgraph/src/FixedProductMarketMakerFactoryMapping.ts` file is not necessary it is copy that is used in the actiivty subgraph so other event handlers can access the FPMM addresses. We are combining all into a single indexer, we already have that handler.
