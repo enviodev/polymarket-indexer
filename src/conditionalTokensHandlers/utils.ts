@@ -1,5 +1,5 @@
 import type { HandlerContext } from "generated";
-import { GLOBAL_OPEN_INTEREST_ID } from "./constants";
+import { COLLATERAL_SCALE, GLOBAL_OPEN_INTEREST_ID } from "./constants";
 import { hexToBytes, bytesToHex, keccak256 } from "viem";
 
 export async function updateMarketOpenInterest(
@@ -125,7 +125,7 @@ export function indexSetContains(
   return (indexSet & (1n << BigInt(index))) !== 0n;
 }
 
-async function getOrCreateUserPosition(
+export async function getOrCreateUserPosition(
   context: HandlerContext,
   user: `0x${string}`,
   positionId: bigint
@@ -162,4 +162,26 @@ export async function updateUserPositionWithBuy(
       totalBought: userPosition.totalBought + amount,
     });
   }
+}
+
+export async function updateUserPositionWithSell(
+  context: HandlerContext,
+  user: `0x${string}`,
+  positionId: bigint,
+  price: bigint,
+  amount: bigint
+) {
+  const userPosition = await getOrCreateUserPosition(context, user, positionId);
+
+  const adjustedAmount =
+    amount > userPosition.amount ? userPosition.amount : amount;
+
+  const deltaPnl =
+    (adjustedAmount * (price - userPosition.avgPrice)) / COLLATERAL_SCALE;
+
+  context.UserPosition.set({
+    ...userPosition,
+    amount: userPosition.amount - adjustedAmount,
+    realizedPnl: userPosition.realizedPnl + deltaPnl,
+  });
 }

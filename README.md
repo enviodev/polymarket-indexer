@@ -34,7 +34,7 @@ pnpm codegen
 - [x] OI Subgraph
 - [x] FPMM Subgraph
 - [x] Activity Subgraph
-- [x] Fee Module Subgraph 
+- [x] Fee Module Subgraph
 - [ ] PNL Subgraph (work in progress)
 
 ## Tasks
@@ -50,6 +50,8 @@ pnpm codegen
 - [x] `getPositionId` implementation (file: `ConditionalTokens.ts`)
 - [ ] understand the use of GlobalUSDCBalance entity used in polymarket subgraph (`USDC.ts`)
 - [ ] Write tests for utility functions like `getPositionId` or `computeProxyWalletAddress`
+- [ ] Make sure all error message are descriptive
+- [ ] In PNL subgraph, `ConditionalTokens.ConditionPreparation` handler look if you can make a relation between `Condition` & `Position` entity. Note: this might be tricky because `Condition.positionIds` is `bigint[]` & ids in `Position` entity is in `string`.
 
 ## Notes
 

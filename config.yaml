@@ -71,6 +71,7 @@ chains:
           - event: PayoutRedemption
             field_selection: *tx_hash_only
           - event: ConditionPreparation
+          - event: ConditionResolution
       - name: NegRiskAdapter
         address: 0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296
         handler: src/conditionalTokensHandlers/NegRiskAdapter.ts

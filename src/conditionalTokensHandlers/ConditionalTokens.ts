@@ -1,9 +1,14 @@
 import { ConditionalTokens, type HandlerContext } from "generated";
-import { updateOpenInterest, updateUserPositionWithBuy } from "./utils";
+import {
+  getOrCreateUserPosition,
+  updateOpenInterest,
+  updateUserPositionWithBuy,
+  updateUserPositionWithSell,
+} from "./utils";
 import { indexer } from "generated";
 import { getEventId } from "../common/utils/getEventId";
 import { getPositionId } from "../common/utils/getPositionId";
-import { FIFTY_CENTS } from "./constants";
+import { COLLATERAL_SCALE, FIFTY_CENTS } from "./constants";
 
 ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
   // check if condition exists if not skip it
@@ -37,6 +42,7 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
   )
     return;
 
+  // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/pnl-subgraph/src/ConditionalTokensMapping.ts#L25-L56
   // here we update PNL
   for (let i = 0; i < 2; i++) {
     const positionId = condition.positionIds[i];
@@ -92,8 +98,6 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
   const stakeholder = event.params.stakeholder;
   const fpmm = await context.FixedProductMarketMaker.get(stakeholder);
 
-  // don't track merges within the market makers
-  if (fpmm != undefined) return;
   // don't track merges from neg risk adapter and exchange
   // neg risk adpater merges are tracked in it's own handler
   if (
@@ -104,6 +108,29 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
   )
     return;
 
+  // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/pnl-subgraph/src/ConditionalTokensMapping.ts#L59-L90
+  // update user position with sell
+  for (let i = 0; i < 2; i++) {
+    const positionId = condition.positionIds[i];
+
+    if (positionId === undefined) {
+      context.log.error(
+        `Failed to update user position: positionId for condition ${conditionId} and outcomeIndex ${i} not found`
+      );
+      continue;
+    }
+
+    await updateUserPositionWithSell(
+      context,
+      stakeholder,
+      positionId,
+      FIFTY_CENTS,
+      amount
+    );
+  }
+
+  // don't track merges within the market makers
+  if (fpmm != undefined) return;
   context.Merge.set({
     id: getEventId(event.transaction.hash, event.logIndex),
     timestamp: event.block.timestamp,
@@ -115,7 +142,7 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
 
 ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
   // check if condition exists if not skip it
-  const { payout, collateralToken, conditionId } = event.params;
+  const { payout, collateralToken, conditionId, redeemer } = event.params;
   const condition = await context.Condition.get(conditionId);
 
   if (!condition) {
@@ -132,39 +159,86 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
 
   // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/activity-subgraph/src/ConditionalTokensMapping.ts#L94-L122
   // note: we are checking if condition exists in the starting part of the handler
-  if (
-    [...indexer.chains[137].NegRiskAdapter.addresses].includes(
-      event.params.redeemer
-    )
-  )
+  if ([...indexer.chains[137].NegRiskAdapter.addresses].includes(redeemer))
     return;
 
   context.Redemption.set({
     id: getEventId(event.transaction.hash, event.logIndex),
     timestamp: event.block.timestamp,
-    redeemer: event.params.redeemer,
+    redeemer: redeemer,
     condition: conditionId,
     indexSets: event.params.indexSets,
     payout: event.params.payout,
   });
+
+  // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/pnl-subgraph/src/ConditionalTokensMapping.ts#L111-L140
+
+  const payoutNumerators = condition.payoutNumerators;
+  const payoutDenominator = condition.payoutDenominator;
+
+  if (payoutDenominator == 0n) {
+    context.log.error(
+      `PayoutRedemption Handler Failed: payoutDenominator for condition ${conditionId} is zero`
+    );
+    return;
+  }
+
+  for (let i = 0; i < condition.positionIds.length; i++) {
+    const positionId = condition.positionIds[i];
+
+    if (positionId === undefined) {
+      context.log.error(
+        `Failed to update user position: positionId for condition ${conditionId} and outcomeIndex ${i} not found`
+      );
+      continue;
+    }
+
+    const userPosition = await getOrCreateUserPosition(
+      context,
+      event.params.redeemer,
+      positionId
+    );
+
+    const amount = userPosition.amount;
+    const payoutNumerator = payoutNumerators[i];
+    if (payoutNumerator === undefined) {
+      context.log.error(
+        `Failed to update user position: payoutNumerator for condition ${conditionId} and outcomeIndex ${i} not found`
+      );
+      continue;
+    }
+    const price = (payoutNumerator * COLLATERAL_SCALE) / payoutDenominator;
+    updateUserPositionWithSell(context, redeemer, positionId, price, amount);
+  }
 });
 
 // Activity Subgraph: https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/activity-subgraph/src/ConditionalTokensMapping.ts#L124-L154
 ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
   const { outcomeSlotCount, conditionId } = event.params;
 
-  if (outcomeSlotCount != 2n) return;
-
-  context.Condition.set({
-    id: conditionId,
-    positionIds: [],
-    payoutNumerators: [],
-    payoutDenominator: 0n,
-  });
+  if (outcomeSlotCount != 2n) {
+    context.log.warn(
+      `ConditionPreparation Handler Warning: condition ${conditionId} has outcomeSlotCount ${outcomeSlotCount}, expected 2`
+    );
+    return;
+  }
 
   // following part is extra in activity subgraph and not present in Open Interest subgraph
   const negRisk =
     event.params.oracle == indexer.chains[137].NegRiskAdapter.addresses[0];
+
+  const condition = await context.Condition.get(conditionId);
+  if (condition == undefined) {
+    context.Condition.set({
+      id: conditionId,
+      positionIds: [
+        getPositionId(conditionId as `0x${string}`, 0, negRisk),
+        getPositionId(conditionId as `0x${string}`, 1, negRisk),
+      ],
+      payoutNumerators: [],
+      payoutDenominator: 0n,
+    });
+  }
 
   for (let i = 0; i < 2; i++) {
     const positionId = getPositionId(
@@ -182,4 +256,27 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
       });
     }
   }
+});
+
+ConditionalTokens.ConditionResolution.handler(async ({ event, context }) => {
+  const { conditionId, payoutNumerators } = event.params;
+  const condition = await context.Condition.get(conditionId);
+
+  if (!condition) {
+    context.log.error(
+      `Failed to update condition on resolution: condition ${conditionId} not found`
+    );
+    return;
+  }
+
+  const payoutDenominator = payoutNumerators.reduce(
+    (acc, val) => acc + val,
+    0n
+  );
+
+  context.Condition.set({
+    ...condition,
+    payoutNumerators: payoutNumerators,
+    payoutDenominator: payoutDenominator,
+  });
 });
