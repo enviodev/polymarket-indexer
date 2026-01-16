@@ -448,7 +448,7 @@ type NegRiskConversion {
   questionCount: Int!
 }
 
-type Position @entity {
+type Position {
   "ERC1155 TokenID of the CTF Asset"
   id: ID!
   "Condition that the token is linked to"

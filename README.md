@@ -60,3 +60,10 @@ This indexer is a work in progress, and some parts of the logic are still being 
 - The `polymarket-subgraph` repo tracks `ConditionalTokens` event multiple times which different event handlers but in our case we have merged all those event handlers into one.
 
 - `activity-subgraph/src/FixedProductMarketMakerFactoryMapping.ts` file is not necessary it is copy that is used in the actiivty subgraph so other event handlers can access the FPMM addresses. We are combining all into a single indexer, we already have that handler.
+
+
+## Feature Requests
+
+Not all are required but just a list that we can talk about:
+
+- having `bytes32` values as `0x{string}` instead of just string

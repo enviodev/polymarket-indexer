@@ -1,6 +1,8 @@
 import type { HandlerContext } from "generated";
 import { COLLATERAL_SCALE, GLOBAL_OPEN_INTEREST_ID } from "./constants";
 import { hexToBytes, bytesToHex, keccak256 } from "viem";
+import { indexer } from "generated";
+import { computePositionId } from "../common/utils/ctf-util";
 
 export async function updateMarketOpenInterest(
   amount: bigint,
@@ -185,3 +187,39 @@ export async function updateUserPositionWithSell(
     realizedPnl: userPosition.realizedPnl + deltaPnl,
   });
 }
+
+export const getNegRiskPositionId = (
+  context: HandlerContext,
+  negRiskMarketId: `0x${string}`,
+  questionIndex: number,
+  outcomeIndex: number
+): bigint => {
+  const questionId = getNegRiskQuestionId(negRiskMarketId, questionIndex);
+  const NEG_RSIK_ADAPTER_ADDRESS =
+    indexer.chains[137].NegRiskAdapter.addresses[0];
+  if (!NEG_RSIK_ADAPTER_ADDRESS) {
+    context.log.error(`
+      NegRiskAdapter address not found in config for chain 137`);
+    throw new Error("NegRiskAdapter address not found in config");
+  }
+  const conditionId = getConditionId(NEG_RSIK_ADAPTER_ADDRESS, questionId);
+
+  const positionId = computePositionId(
+    NEG_RSIK_ADAPTER_ADDRESS,
+    conditionId,
+    outcomeIndex
+  );
+  return positionId;
+};
+
+export const computeNegRiskYesPrice = (
+  noPrice: bigint,
+  noCount: number,
+  questionCount: number
+): bigint => {
+  const yesPrice =
+    (noPrice * BigInt(noCount) - COLLATERAL_SCALE * BigInt(noCount - 1)) /
+    BigInt(questionCount - noCount);
+
+  return yesPrice;
+};

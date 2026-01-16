@@ -229,6 +229,7 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
 
   const condition = await context.Condition.get(conditionId);
   if (condition == undefined) {
+    // PNL subgraph: https://github.com/Polymarket/polymarket-subgraph/blob/main/pnl-subgraph/src/ConditionalTokensMapping.ts#L153-L154
     context.Condition.set({
       id: conditionId,
       positionIds: [
@@ -258,6 +259,7 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
   }
 });
 
+// Only in PNL Subgraph: https://github.com/Polymarket/polymarket-subgraph/blob/main/pnl-subgraph/src/ConditionalTokensMapping.ts#L157-L172
 ConditionalTokens.ConditionResolution.handler(async ({ event, context }) => {
   const { conditionId, payoutNumerators } = event.params;
   const condition = await context.Condition.get(conditionId);
