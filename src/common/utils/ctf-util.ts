@@ -1,7 +1,7 @@
 import { bytesToHex, concatHex, keccak256, padHex, toBytes, toHex } from "viem";
 
 const P = BigInt(
-  "21888242871839275222246405745257275088696311157297823662689037894645226208583"
+  "21888242871839275222246405745257275088696311157297823662689037894645226208583",
 );
 const B = BigInt(3);
 
@@ -41,10 +41,10 @@ const legendreSymbol = (a: bigint): bigint => {
 // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/common/utils/ctf-utils.ts#L42C1-L95C3
 const computeCollectionId = (
   conditionId: `0x${string}`,
-  outcomeIndex: number
-): `0x${string}` => {
+  outcomeIndex: number,
+): Uint8Array => {
   const hashPayload = toBytes(
-    concatHex([conditionId as `0x${string}`, padHex("0x", { size: 32 })])
+    concatHex([conditionId as `0x${string}`, padHex("0x", { size: 32 })]),
   );
 
   hashPayload[63] = 1 << outcomeIndex;
@@ -53,7 +53,7 @@ const computeCollectionId = (
   const hashResultReversed = toBytes(hahsResult).reverse();
 
   const hashBigInt = BigInt(bytesToHex(hashResultReversed));
-  const odd = (hashBigInt << 255n == 0n) == false;
+  const odd = ((hashBigInt >> 255n) & 1n) === 1n;
 
   let x1 = hashBigInt;
   let yy = 0n;
@@ -63,7 +63,7 @@ const computeCollectionId = (
     yy = addModP(mulModP(mulModP(x1, x1), x1), B);
   } while (legendreSymbol(yy) != 1n);
 
-  const oddToggle = 1n >> 254n;
+  const oddToggle = 1n << 254n;
 
   if (odd) {
     if ((x1 & oddToggle) == 0n) {
@@ -72,35 +72,33 @@ const computeCollectionId = (
       x1 = x1 - oddToggle;
     }
   }
-  let x1Hex = toHex(x1);
-  x1Hex = padHex(x1Hex, { size: 32 });
-  return x1Hex;
+  const bytes = new Uint8Array(32);
+  bytes.set(toBytes(toHex(x1)).slice(-32)); // FORCE 32 BYTES
+  return bytes;
 };
 
 // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/common/utils/ctf-utils.ts#L104C1-L126C1
-const compputePositionIdFromCollectionId = (
-  collateral: string,
-  collectionId: `0x${string}`
+const computePositionIdFromCollectionId = (
+  collateral: `0x${string}`,
+  collectionId: Uint8Array,
 ) => {
-  const hashPaylod = concatHex([
-    padHex(collateral as `0x${string}`, { size: 20 }),
-    padHex(collectionId as `0x${string}`, { size: 32 }),
-  ]);
+  const payload = new Uint8Array(52);
 
-  const hash = keccak256(hashPaylod);
+  payload.set(toBytes(collateral).slice(-20), 0);
+  payload.set(collectionId, 20);
 
-  const bytesRevered = toBytes(hash).reverse();
-  return BigInt(bytesToHex(bytesRevered));
+  const hash = keccak256(payload);
+  return BigInt(bytesToHex(toBytes(hash).reverse()));
 };
 
 // https://github.com/Polymarket/polymarket-subgraph/blob/7a92ba026a9466c07381e0d245a323ba23ee8701/common/utils/ctf-utils.ts#L127C1-L135C3
 const computePositionId = (
   collateral: `0x${string}`,
   conditionId: `0x${string}`,
-  outcomeIndex: number
+  outcomeIndex: number,
 ) => {
   const collectionId = computeCollectionId(conditionId, outcomeIndex);
-  return compputePositionIdFromCollectionId(collateral, collectionId);
+  return computePositionIdFromCollectionId(collateral, collectionId);
 };
 
 export { computePositionId, computeCollectionId };
