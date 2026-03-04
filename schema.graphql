@@ -119,6 +119,9 @@ type OrdersMatchedGlobal {
 
 type Condition {
   id: ID!
+  positionIds: [BigInt!]!
+  payoutNumerators: [BigInt!]!
+  payoutDenominator: BigInt!
 }
 
 type NegRiskEvent {
@@ -184,4 +187,100 @@ type Position {
 
 type FixedProductMarketMaker {
   id: ID!
+  creator: String!
+  creationTimestamp: BigInt!
+  creationTransactionHash: String!
+  collateralToken: String!
+  conditionalTokenAddress: String!
+  conditions: [String!]!
+  fee: BigInt!
+  tradesQuantity: BigInt!
+  buysQuantity: BigInt!
+  sellsQuantity: BigInt!
+  liquidityAddQuantity: BigInt!
+  liquidityRemoveQuantity: BigInt!
+  collateralVolume: BigInt!
+  scaledCollateralVolume: BigDecimal!
+  collateralBuyVolume: BigInt!
+  scaledCollateralBuyVolume: BigDecimal!
+  collateralSellVolume: BigInt!
+  scaledCollateralSellVolume: BigDecimal!
+  feeVolume: BigInt!
+  scaledFeeVolume: BigDecimal!
+  liquidityParameter: BigInt!
+  scaledLiquidityParameter: BigDecimal!
+  outcomeTokenAmounts: [BigInt!]!
+  outcomeTokenPrices: [BigDecimal!]!
+  outcomeSlotCount: BigInt
+  lastActiveDay: BigInt!
+  totalSupply: BigInt!
+}
+
+## ============================================================
+## Phase 4A: PnL
+## ============================================================
+
+type UserPosition {
+  id: ID!
+  user: String! @index
+  tokenId: BigInt! @index
+  amount: BigInt!
+  avgPrice: BigInt!
+  realizedPnl: BigInt!
+  totalBought: BigInt!
+}
+
+## ============================================================
+## Phase 4B: FPMM
+## ============================================================
+
+type Collateral {
+  id: ID!
+  name: String!
+  symbol: String!
+  decimals: BigInt!
+}
+
+enum TransactionType {
+  Buy
+  Sell
+}
+
+type FpmmTransaction {
+  id: ID!
+  type: TransactionType!
+  timestamp: BigInt! @index
+  market_id: String! @index
+  user: String! @index
+  tradeAmount: BigInt!
+  feeAmount: BigInt!
+  outcomeIndex: BigInt!
+  outcomeTokensAmount: BigInt!
+}
+
+type FpmmFundingAddition {
+  id: ID!
+  timestamp: BigInt! @index
+  fpmm_id: String! @index
+  funder: String! @index
+  amountsAdded: [BigInt!]!
+  amountsRefunded: [BigInt!]!
+  sharesMinted: BigInt!
+}
+
+type FpmmFundingRemoval {
+  id: ID!
+  timestamp: BigInt! @index
+  fpmm_id: String! @index
+  funder: String! @index
+  amountsRemoved: [BigInt!]!
+  collateralRemoved: BigInt!
+  sharesBurnt: BigInt!
+}
+
+type FpmmPoolMembership {
+  id: ID!
+  pool_id: String! @index
+  funder: String! @index
+  amount: BigInt!
 }

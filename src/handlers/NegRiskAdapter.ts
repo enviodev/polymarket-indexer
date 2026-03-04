@@ -2,16 +2,27 @@ import { NegRiskAdapter } from "generated";
 import {
   NEG_RISK_ADAPTER,
   NEG_RISK_EXCHANGE,
+  COLLATERAL_SCALE,
+  FIFTY_CENTS,
 } from "../utils/constants.js";
 import {
   getEventKey,
   getNegRiskQuestionId,
   getConditionId,
+  getNegRiskPositionId,
   indexSetContains,
 } from "../utils/negRisk.js";
+import {
+  updateUserPositionWithBuy,
+  updateUserPositionWithSell,
+  loadOrCreateUserPosition,
+  computeNegRiskYesPrice,
+} from "../utils/pnl.js";
 
 const NEG_RISK_EXCHANGE_LOWER = NEG_RISK_EXCHANGE.toLowerCase();
 const FEE_DENOMINATOR = 10_000n;
+const YES_INDEX = 0;
+const NO_INDEX = 1;
 
 // ============================================================
 // Helper: get or create OI entities
@@ -93,12 +104,13 @@ NegRiskAdapter.QuestionPrepared.handler(async ({ event, context }) => {
 });
 
 // ============================================================
-// PositionSplit — Activity: create Split + OI: increase
+// PositionSplit — Activity + OI + PnL
 // ============================================================
 
 NegRiskAdapter.PositionSplit.handler(async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const stakeholder = event.params.stakeholder;
+  const skipExchange = stakeholder.toLowerCase() === NEG_RISK_EXCHANGE_LOWER;
 
   // OI: Check condition exists
   const condition = await context.Condition.get(conditionId);
@@ -107,7 +119,7 @@ NegRiskAdapter.PositionSplit.handler(async ({ event, context }) => {
   }
 
   // Activity: Create Split (skip NegRiskExchange)
-  if (stakeholder.toLowerCase() !== NEG_RISK_EXCHANGE_LOWER) {
+  if (!skipExchange) {
     context.Split.set({
       id: getEventKey(event.chainId, event.block.number, event.logIndex),
       timestamp: BigInt(event.block.timestamp),
@@ -116,15 +128,30 @@ NegRiskAdapter.PositionSplit.handler(async ({ event, context }) => {
       amount: event.params.amount,
     });
   }
+
+  // PnL: Split = buying both outcomes at 50 cents each (skip NegRiskExchange)
+  if (!skipExchange && condition) {
+    const positionIds = condition.positionIds;
+    for (let i = 0; i < 2; i++) {
+      await updateUserPositionWithBuy(
+        context,
+        stakeholder,
+        positionIds[i]!,
+        FIFTY_CENTS,
+        event.params.amount,
+      );
+    }
+  }
 });
 
 // ============================================================
-// PositionsMerge — Activity: create Merge + OI: decrease
+// PositionsMerge — Activity + OI + PnL
 // ============================================================
 
 NegRiskAdapter.PositionsMerge.handler(async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const stakeholder = event.params.stakeholder;
+  const skipExchange = stakeholder.toLowerCase() === NEG_RISK_EXCHANGE_LOWER;
 
   // OI: Check condition exists
   const condition = await context.Condition.get(conditionId);
@@ -133,7 +160,7 @@ NegRiskAdapter.PositionsMerge.handler(async ({ event, context }) => {
   }
 
   // Activity: Create Merge (skip NegRiskExchange)
-  if (stakeholder.toLowerCase() !== NEG_RISK_EXCHANGE_LOWER) {
+  if (!skipExchange) {
     context.Merge.set({
       id: getEventKey(event.chainId, event.block.number, event.logIndex),
       timestamp: BigInt(event.block.timestamp),
@@ -142,10 +169,24 @@ NegRiskAdapter.PositionsMerge.handler(async ({ event, context }) => {
       amount: event.params.amount,
     });
   }
+
+  // PnL: Merge = selling both outcomes at 50 cents each (skip NegRiskExchange)
+  if (!skipExchange && condition) {
+    const positionIds = condition.positionIds;
+    for (let i = 0; i < 2; i++) {
+      await updateUserPositionWithSell(
+        context,
+        stakeholder,
+        positionIds[i]!,
+        FIFTY_CENTS,
+        event.params.amount,
+      );
+    }
+  }
 });
 
 // ============================================================
-// PayoutRedemption — Activity: create Redemption + OI: decrease
+// PayoutRedemption — Activity + OI + PnL
 // ============================================================
 
 NegRiskAdapter.PayoutRedemption.handler(async ({ event, context }) => {
@@ -166,10 +207,30 @@ NegRiskAdapter.PayoutRedemption.handler(async ({ event, context }) => {
     indexSets: [1n, 2n],
     payout: event.params.payout,
   });
+
+  // PnL: Sell at payout price for each outcome
+  if (condition && condition.payoutDenominator > 0n) {
+    const payoutNumerators = condition.payoutNumerators;
+    const payoutDenominator = condition.payoutDenominator;
+    const positionIds = condition.positionIds;
+
+    for (let i = 0; i < 2; i++) {
+      const amount = event.params.amounts[i]!;
+      const price =
+        (payoutNumerators[i]! * COLLATERAL_SCALE) / payoutDenominator;
+      await updateUserPositionWithSell(
+        context,
+        event.params.redeemer,
+        positionIds[i]!,
+        price,
+        amount,
+      );
+    }
+  }
 });
 
 // ============================================================
-// PositionsConverted — Activity: create NegRiskConversion + OI: reduce
+// PositionsConverted — Activity + OI + PnL
 // ============================================================
 
 NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
@@ -179,19 +240,20 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
 
   const questionCount = Number(negRiskEvent.questionCount);
   const indexSet = event.params.indexSet;
+  const stakeholder = event.params.stakeholder;
 
   // Activity: Create NegRiskConversion
   context.NegRiskConversion.set({
     id: getEventKey(event.chainId, event.block.number, event.logIndex),
     timestamp: BigInt(event.block.timestamp),
-    stakeholder: event.params.stakeholder,
+    stakeholder,
     negRiskMarketId: marketId,
     amount: event.params.amount,
     indexSet,
     questionCount: negRiskEvent.questionCount,
   });
 
-  // OI: Collect condition IDs for positions being converted
+  // Collect condition IDs for positions being converted
   const conditionIds: string[] = [];
   for (let qi = 0; qi < questionCount; qi++) {
     if (indexSetContains(indexSet, qi)) {
@@ -207,7 +269,7 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
     }
   }
 
-  // Converts reduce OI when more than 1 no position
+  // OI: Converts reduce OI when more than 1 no position
   const noCount = conditionIds.length;
   if (noCount > 1) {
     let amount = event.params.amount;
@@ -218,7 +280,6 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
       const feeAmount = (amount * negRiskEvent.feeBps) / FEE_DENOMINATOR;
       amount = amount - feeAmount;
 
-      // Reduce OI by fees released to vault
       const feeReleased = -(feeAmount * multiplier);
       for (let i = 0; i < noCount; i++) {
         await updateMarketOI(context, conditionIds[i]!, feeReleased / divisor);
@@ -226,7 +287,6 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
       await updateGlobalOI(context, feeReleased);
     }
 
-    // Reduce OI by collateral released to user
     const collateralReleased = -(amount * multiplier);
     for (let i = 0; i < noCount; i++) {
       await updateMarketOI(
@@ -236,5 +296,59 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
       );
     }
     await updateGlobalOI(context, collateralReleased);
+  }
+
+  // PnL: Sell NO positions, buy YES positions
+  let noPriceSum = 0n;
+  let noCountPnl = 0;
+
+  for (let qi = 0; qi < questionCount; qi++) {
+    if (indexSetContains(indexSet, qi)) {
+      noCountPnl++;
+      const noPositionId = getNegRiskPositionId(
+        marketId as `0x${string}`,
+        qi,
+        NO_INDEX,
+      );
+      const userPosition = await loadOrCreateUserPosition(
+        context,
+        stakeholder,
+        noPositionId,
+      );
+
+      // Sell NO token at avg price
+      await updateUserPositionWithSell(
+        context,
+        stakeholder,
+        noPositionId,
+        userPosition.avgPrice,
+        event.params.amount,
+      );
+
+      noPriceSum += userPosition.avgPrice;
+    }
+  }
+
+  // Buy YES tokens if not all positions are NO
+  if (noCountPnl < questionCount && noCountPnl > 0) {
+    const noPrice = noPriceSum / BigInt(noCountPnl);
+    const yesPrice = computeNegRiskYesPrice(noPrice, noCountPnl, questionCount);
+
+    for (let qi = 0; qi < questionCount; qi++) {
+      if (!indexSetContains(indexSet, qi)) {
+        const yesPositionId = getNegRiskPositionId(
+          marketId as `0x${string}`,
+          qi,
+          YES_INDEX,
+        );
+        await updateUserPositionWithBuy(
+          context,
+          stakeholder,
+          yesPositionId,
+          yesPrice,
+          event.params.amount,
+        );
+      }
+    }
   }
 });

@@ -4,20 +4,34 @@ import {
   NEG_RISK_ADAPTER,
   EXCHANGE,
   NEG_RISK_EXCHANGE,
+  COLLATERAL_SCALE,
+  FIFTY_CENTS,
 } from "../utils/constants.js";
 import { computePositionId } from "../utils/ctf.js";
 import { getEventKey } from "../utils/negRisk.js";
+import {
+  updateUserPositionWithBuy,
+  updateUserPositionWithSell,
+  loadOrCreateUserPosition,
+} from "../utils/pnl.js";
 
 const USDC_LOWER = USDC.toLowerCase();
 const NEG_RISK_ADAPTER_LOWER = NEG_RISK_ADAPTER.toLowerCase();
 const EXCHANGE_LOWER = EXCHANGE.toLowerCase();
 const NEG_RISK_EXCHANGE_LOWER = NEG_RISK_EXCHANGE.toLowerCase();
+const NEG_RISK_WRAPPED = "0x3A3BD7bb9528E159577F7C2e685CC81A765002E2" as `0x${string}`;
 
 // Addresses to skip for activity tracking (handled elsewhere)
 const SKIP_ACTIVITY = new Set([
   NEG_RISK_ADAPTER_LOWER,
   EXCHANGE_LOWER,
   NEG_RISK_EXCHANGE_LOWER,
+]);
+
+// Skip PnL for these (handled in their own handlers)
+const SKIP_PNL = new Set([
+  NEG_RISK_ADAPTER_LOWER,
+  EXCHANGE_LOWER,
 ]);
 
 // ============================================================
@@ -60,6 +74,21 @@ async function updateOpenInterest(
 }
 
 // ============================================================
+// Helper: compute position IDs for a condition
+// ============================================================
+
+function getPositionIds(
+  conditionId: `0x${string}`,
+  negRisk: boolean,
+): [bigint, bigint] {
+  const collateral = negRisk ? NEG_RISK_WRAPPED : (USDC as `0x${string}`);
+  return [
+    computePositionId(collateral, conditionId, 0),
+    computePositionId(collateral, conditionId, 1),
+  ];
+}
+
+// ============================================================
 // ConditionPreparation — create Condition + Position entities
 // ============================================================
 
@@ -68,27 +97,26 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
   if (event.params.outcomeSlotCount !== 2n) return;
 
   const conditionId = event.params.conditionId;
-
-  // Create Condition entity (OI)
-  const existing = await context.Condition.get(conditionId);
-  if (!existing) {
-    context.Condition.set({ id: conditionId });
-  }
-
-  // Create Position entities (Activity)
   const negRisk =
     event.params.oracle.toLowerCase() === NEG_RISK_ADAPTER_LOWER;
 
-  for (let outcomeIndex = 0; outcomeIndex < 2; outcomeIndex++) {
-    const collateral = negRisk
-      ? ("0x3A3BD7bb9528E159577F7C2e685CC81A765002E2" as `0x${string}`)
-      : (USDC as `0x${string}`);
+  // Compute position IDs for PnL tracking
+  const [posId0, posId1] = getPositionIds(conditionId as `0x${string}`, negRisk);
 
-    const positionId = computePositionId(
-      collateral,
-      conditionId as `0x${string}`,
-      outcomeIndex,
-    );
+  // Create Condition entity with position IDs (OI + PnL)
+  const existing = await context.Condition.get(conditionId);
+  if (!existing) {
+    context.Condition.set({
+      id: conditionId,
+      positionIds: [posId0, posId1],
+      payoutNumerators: [] as bigint[],
+      payoutDenominator: 0n,
+    });
+  }
+
+  // Create Position entities (Activity)
+  for (let outcomeIndex = 0; outcomeIndex < 2; outcomeIndex++) {
+    const positionId = outcomeIndex === 0 ? posId0 : posId1;
     const posIdStr = positionId.toString();
 
     const existingPos = await context.Position.get(posIdStr);
@@ -103,7 +131,29 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
 });
 
 // ============================================================
-// PositionSplit — Activity: create Split + OI: increase
+// ConditionResolution — store payout numerators/denominator (PnL)
+// ============================================================
+
+ConditionalTokens.ConditionResolution.handler(async ({ event, context }) => {
+  const conditionId = event.params.conditionId;
+  const condition = await context.Condition.get(conditionId);
+  if (!condition) return;
+
+  const payoutNumerators = event.params.payoutNumerators.map((v: bigint) => v);
+  const payoutDenominator = payoutNumerators.reduce(
+    (sum: bigint, v: bigint) => sum + v,
+    0n,
+  );
+
+  context.Condition.set({
+    ...condition,
+    payoutNumerators,
+    payoutDenominator,
+  });
+});
+
+// ============================================================
+// PositionSplit — Activity + OI + PnL
 // ============================================================
 
 ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
@@ -112,7 +162,6 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
   const stakeholderLower = stakeholder.toLowerCase();
   const collateralToken = event.params.collateralToken;
 
-  // Skip unrecognized conditions
   const condition = await context.Condition.get(conditionId);
   if (!condition) return;
 
@@ -130,14 +179,28 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
     }
   }
 
-  // OI: Only track USDC splits (not wrapped collateral from neg risk)
+  // OI: Only track USDC splits
   if (collateralToken.toLowerCase() === USDC_LOWER) {
     await updateOpenInterest(context, conditionId, event.params.amount);
+  }
+
+  // PnL: Split = buying both outcomes at 50 cents each (skip NRA/Exchange)
+  if (!SKIP_PNL.has(stakeholderLower)) {
+    const positionIds = condition.positionIds;
+    for (let i = 0; i < 2; i++) {
+      await updateUserPositionWithBuy(
+        context,
+        stakeholder,
+        positionIds[i]!,
+        FIFTY_CENTS,
+        event.params.amount,
+      );
+    }
   }
 });
 
 // ============================================================
-// PositionsMerge — Activity: create Merge + OI: decrease
+// PositionsMerge — Activity + OI + PnL
 // ============================================================
 
 ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
@@ -146,7 +209,6 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
   const stakeholderLower = stakeholder.toLowerCase();
   const collateralToken = event.params.collateralToken;
 
-  // Skip unrecognized conditions
   const condition = await context.Condition.get(conditionId);
   if (!condition) return;
 
@@ -164,14 +226,28 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
     }
   }
 
-  // OI: Only track USDC merges — merge reduces OI
+  // OI: Only track USDC merges
   if (collateralToken.toLowerCase() === USDC_LOWER) {
     await updateOpenInterest(context, conditionId, -event.params.amount);
+  }
+
+  // PnL: Merge = selling both outcomes at 50 cents each (skip NRA/Exchange)
+  if (!SKIP_PNL.has(stakeholderLower)) {
+    const positionIds = condition.positionIds;
+    for (let i = 0; i < 2; i++) {
+      await updateUserPositionWithSell(
+        context,
+        stakeholder,
+        positionIds[i]!,
+        FIFTY_CENTS,
+        event.params.amount,
+      );
+    }
   }
 });
 
 // ============================================================
-// PayoutRedemption — Activity: create Redemption + OI: decrease
+// PayoutRedemption — Activity + OI + PnL
 // ============================================================
 
 ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
@@ -179,11 +255,10 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
   const redeemer = event.params.redeemer;
   const collateralToken = event.params.collateralToken;
 
-  // Skip unrecognized conditions
   const condition = await context.Condition.get(conditionId);
   if (!condition) return;
 
-  // Activity: Create Redemption (skip NegRiskAdapter — handled in NRA handler)
+  // Activity: Create Redemption (skip NegRiskAdapter)
   if (redeemer.toLowerCase() !== NEG_RISK_ADAPTER_LOWER) {
     context.Redemption.set({
       id: getEventKey(event.chainId, event.block.number, event.logIndex),
@@ -195,8 +270,35 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
     });
   }
 
-  // OI: Only track USDC redemptions — redemption reduces OI
+  // OI: Only track USDC redemptions
   if (collateralToken.toLowerCase() === USDC_LOWER) {
     await updateOpenInterest(context, conditionId, -event.params.payout);
+  }
+
+  // PnL: Redeem = sell at payout price (skip NRA — handled there)
+  if (redeemer.toLowerCase() !== NEG_RISK_ADAPTER_LOWER) {
+    if (condition.payoutDenominator === 0n) return;
+
+    const payoutNumerators = condition.payoutNumerators;
+    const payoutDenominator = condition.payoutDenominator;
+    const positionIds = condition.positionIds;
+
+    for (let i = 0; i < 2; i++) {
+      const userPosition = await loadOrCreateUserPosition(
+        context,
+        redeemer,
+        positionIds[i]!,
+      );
+      const amount = userPosition.amount;
+      const price =
+        (payoutNumerators[i]! * COLLATERAL_SCALE) / payoutDenominator;
+      await updateUserPositionWithSell(
+        context,
+        redeemer,
+        positionIds[i]!,
+        price,
+        amount,
+      );
+    }
   }
 });

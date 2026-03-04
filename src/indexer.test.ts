@@ -19,6 +19,7 @@ import "./handlers/Exchange.js";
 import "./handlers/ConditionalTokens.js";
 import "./handlers/NegRiskAdapter.js";
 import "./handlers/FPMMFactory.js";
+import "./handlers/FixedProductMarketMaker.js";
 
 const {
   MockDb,
@@ -31,6 +32,7 @@ const {
   ConditionalTokens,
   NegRiskAdapter,
   FPMMFactory,
+  FixedProductMarketMaker: FPMMTestHelper,
   Addresses,
 } = TestHelpers;
 
@@ -405,6 +407,7 @@ describe("Exchange - TokenRegistered", () => {
 const MOCK_CONDITION_ID =
   "0x000000000000000000000000000000000000000000000000000000000000abcd";
 const MOCK_USDC = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+const MOCK_CONDITIONAL_TOKENS = "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045";
 const MOCK_PARENT_COLLECTION =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -457,7 +460,7 @@ describe("ConditionalTokens - ConditionPreparation", () => {
 describe("ConditionalTokens - PositionSplit", () => {
   it("should create Split entity and update OI for USDC split", async () => {
     const mockDb = MockDb.createMockDb();
-    const seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID });
+    const seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID, positionIds: [100n, 101n], payoutNumerators: [], payoutDenominator: 0n });
 
     const mockEvent = ConditionalTokens.PositionSplit.createMockEvent({
       stakeholder: Addresses.mockAddresses[0]!,
@@ -491,7 +494,7 @@ describe("ConditionalTokens - PositionSplit", () => {
   it("should skip Split for NegRiskAdapter stakeholder but still update OI", async () => {
     const mockDb = MockDb.createMockDb();
     const NEG_RISK_ADAPTER_ADDR = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296";
-    const seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID });
+    const seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID, positionIds: [100n, 101n], payoutNumerators: [], payoutDenominator: 0n });
 
     const mockEvent = ConditionalTokens.PositionSplit.createMockEvent({
       stakeholder: NEG_RISK_ADAPTER_ADDR,
@@ -521,7 +524,7 @@ describe("ConditionalTokens - PositionSplit", () => {
 describe("ConditionalTokens - PositionsMerge", () => {
   it("should create Merge entity and decrease OI", async () => {
     const mockDb = MockDb.createMockDb();
-    let seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID });
+    let seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID, positionIds: [100n, 101n], payoutNumerators: [], payoutDenominator: 0n });
     seededDb = seededDb.entities.MarketOpenInterest.set({
       id: MOCK_CONDITION_ID,
       amount: 2_000_000n,
@@ -559,7 +562,7 @@ describe("ConditionalTokens - PositionsMerge", () => {
 describe("ConditionalTokens - PayoutRedemption", () => {
   it("should create Redemption entity and decrease OI", async () => {
     const mockDb = MockDb.createMockDb();
-    let seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID });
+    let seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID, positionIds: [100n, 101n], payoutNumerators: [], payoutDenominator: 0n });
     seededDb = seededDb.entities.MarketOpenInterest.set({
       id: MOCK_CONDITION_ID,
       amount: 1_000_000n,
@@ -654,7 +657,7 @@ describe("NegRiskAdapter - QuestionPrepared", () => {
 describe("NegRiskAdapter - PositionSplit", () => {
   it("should create Split and update OI", async () => {
     const mockDb = MockDb.createMockDb();
-    const seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID });
+    const seededDb = mockDb.entities.Condition.set({ id: MOCK_CONDITION_ID, positionIds: [100n, 101n], payoutNumerators: [], payoutDenominator: 0n });
 
     const mockEvent = NegRiskAdapter.PositionSplit.createMockEvent({
       stakeholder: Addresses.mockAddresses[0]!,
@@ -711,15 +714,23 @@ describe("NegRiskAdapter - PositionsConverted", () => {
 // ============================================================
 
 describe("FPMMFactory - FixedProductMarketMakerCreation", () => {
-  it("should create FixedProductMarketMaker entity", async () => {
+  it("should create FixedProductMarketMaker entity with full fields", async () => {
     const mockDb = MockDb.createMockDb();
     const fpmmAddr = Addresses.mockAddresses[0]!;
+
+    // Seed condition (required for factory validation)
+    const seededDb = mockDb.entities.Condition.set({
+      id: MOCK_CONDITION_ID,
+      positionIds: [100n, 101n],
+      payoutNumerators: [],
+      payoutDenominator: 0n,
+    });
 
     const mockEvent =
       FPMMFactory.FixedProductMarketMakerCreation.createMockEvent({
         creator: Addresses.mockAddresses[1]!,
         fixedProductMarketMaker: fpmmAddr,
-        conditionalTokens: Addresses.mockAddresses[2]!,
+        conditionalTokens: MOCK_CONDITIONAL_TOKENS,
         collateralToken: MOCK_USDC,
         conditionIds: [MOCK_CONDITION_ID],
         fee: 2000n,
@@ -728,11 +739,203 @@ describe("FPMMFactory - FixedProductMarketMakerCreation", () => {
     const result =
       await FPMMFactory.FixedProductMarketMakerCreation.processEvent({
         event: mockEvent,
-        mockDb,
+        mockDb: seededDb,
       });
 
     const fpmm = result.entities.FixedProductMarketMaker.get(fpmmAddr);
     expect(fpmm).toBeDefined();
     expect(fpmm!.id).toBe(fpmmAddr);
+    expect(fpmm!.fee).toBe(2000n);
+    expect(fpmm!.tradesQuantity).toBe(0n);
+    expect(fpmm!.totalSupply).toBe(0n);
+    expect(fpmm!.outcomeTokenAmounts).toEqual([0n, 0n]);
+    expect(fpmm!.conditions).toEqual([MOCK_CONDITION_ID]);
+  });
+
+  it("should skip FPMM with wrong ConditionalTokens address", async () => {
+    const mockDb = MockDb.createMockDb();
+    const fpmmAddr = Addresses.mockAddresses[0]!;
+
+    const seededDb = mockDb.entities.Condition.set({
+      id: MOCK_CONDITION_ID,
+      positionIds: [100n, 101n],
+      payoutNumerators: [],
+      payoutDenominator: 0n,
+    });
+
+    const mockEvent =
+      FPMMFactory.FixedProductMarketMakerCreation.createMockEvent({
+        creator: Addresses.mockAddresses[1]!,
+        fixedProductMarketMaker: fpmmAddr,
+        conditionalTokens: Addresses.mockAddresses[2]!, // wrong address
+        collateralToken: MOCK_USDC,
+        conditionIds: [MOCK_CONDITION_ID],
+        fee: 2000n,
+      });
+
+    const result =
+      await FPMMFactory.FixedProductMarketMakerCreation.processEvent({
+        event: mockEvent,
+        mockDb: seededDb,
+      });
+
+    const fpmm = result.entities.FixedProductMarketMaker.get(fpmmAddr);
+    expect(fpmm).toBeUndefined();
+  });
+});
+
+// ============================================================
+// Phase 4: PnL Tests
+// ============================================================
+
+describe("PnL - Exchange OrderFilled", () => {
+  it("should create UserPosition on buy order fill", async () => {
+    const mockDb = MockDb.createMockDb();
+
+    const mockEvent = Exchange.OrderFilled.createMockEvent({
+      orderHash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      maker: Addresses.mockAddresses[0]!,
+      taker: Addresses.mockAddresses[1]!,
+      makerAssetId: 0n, // Buy: maker sends USDC
+      takerAssetId: 42n, // Buy: taker sends tokens
+      makerAmountFilled: 500_000n, // 0.5 USDC
+      takerAmountFilled: 1_000_000n, // 1 token
+      fee: 10_000n,
+    });
+
+    const result = await Exchange.OrderFilled.processEvent({
+      event: mockEvent,
+      mockDb,
+    });
+
+    // UserPosition should be created for the buyer
+    const positions = result.entities.UserPosition.getAll();
+    expect(positions.length).toBe(1);
+    const pos = positions[0]!;
+    expect(pos.user).toBe(Addresses.mockAddresses[0]!);
+    expect(pos.tokenId).toBe(42n);
+    expect(pos.amount).toBe(1_000_000n);
+    // Price = 500_000 * 1_000_000 / 1_000_000 = 500_000 (0.5 USDC)
+    expect(pos.avgPrice).toBe(500_000n);
+    expect(pos.realizedPnl).toBe(0n);
+  });
+});
+
+describe("PnL - ConditionalTokens ConditionResolution", () => {
+  it("should store payout numerators on Condition", async () => {
+    const mockDb = MockDb.createMockDb();
+    const seededDb = mockDb.entities.Condition.set({
+      id: MOCK_CONDITION_ID,
+      positionIds: [100n, 101n],
+      payoutNumerators: [],
+      payoutDenominator: 0n,
+    });
+
+    const mockEvent = ConditionalTokens.ConditionResolution.createMockEvent({
+      conditionId: MOCK_CONDITION_ID,
+      oracle: Addresses.mockAddresses[0]!,
+      questionId: "0x0000000000000000000000000000000000000000000000000000000000001111",
+      outcomeSlotCount: 2n,
+      payoutNumerators: [1n, 0n],
+    });
+
+    const result = await ConditionalTokens.ConditionResolution.processEvent({
+      event: mockEvent,
+      mockDb: seededDb,
+    });
+
+    const condition = result.entities.Condition.get(MOCK_CONDITION_ID);
+    expect(condition).toBeDefined();
+    expect(condition!.payoutNumerators).toEqual([1n, 0n]);
+    expect(condition!.payoutDenominator).toBe(1n);
+  });
+});
+
+describe("PnL - UserPosition averaging", () => {
+  it("should compute weighted average price across multiple buys", async () => {
+    const mockDb = MockDb.createMockDb();
+
+    // First buy: 1 token at 0.5
+    const event1 = Exchange.OrderFilled.createMockEvent({
+      orderHash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      maker: Addresses.mockAddresses[0]!,
+      taker: Addresses.mockAddresses[1]!,
+      makerAssetId: 0n,
+      takerAssetId: 42n,
+      makerAmountFilled: 500_000n,
+      takerAmountFilled: 1_000_000n,
+      fee: 0n,
+    });
+
+    const result1 = await Exchange.OrderFilled.processEvent({
+      event: event1,
+      mockDb,
+    });
+
+    // Second buy: 1 token at 0.8
+    const event2 = Exchange.OrderFilled.createMockEvent({
+      orderHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      maker: Addresses.mockAddresses[0]!,
+      taker: Addresses.mockAddresses[1]!,
+      makerAssetId: 0n,
+      takerAssetId: 42n,
+      makerAmountFilled: 800_000n,
+      takerAmountFilled: 1_000_000n,
+      fee: 0n,
+    });
+
+    const result2 = await Exchange.OrderFilled.processEvent({
+      event: event2,
+      mockDb: result1,
+    });
+
+    const pos = result2.entities.UserPosition.get(
+      `${Addresses.mockAddresses[0]!}-42`,
+    );
+    expect(pos).toBeDefined();
+    expect(pos!.amount).toBe(2_000_000n);
+    // avgPrice = (500_000 * 1_000_000 + 800_000 * 1_000_000) / 2_000_000 = 650_000
+    expect(pos!.avgPrice).toBe(650_000n);
+    expect(pos!.totalBought).toBe(2_000_000n);
+  });
+
+  it("should compute realized PnL on sell", async () => {
+    const mockDb = MockDb.createMockDb();
+
+    // Seed position: 2 tokens at avg price 0.5
+    const seededDb = mockDb.entities.UserPosition.set({
+      id: `${Addresses.mockAddresses[0]!}-42`,
+      user: Addresses.mockAddresses[0]!,
+      tokenId: 42n,
+      amount: 2_000_000n,
+      avgPrice: 500_000n,
+      realizedPnl: 0n,
+      totalBought: 2_000_000n,
+    });
+
+    // Sell: 1 token at 0.8
+    const event = Exchange.OrderFilled.createMockEvent({
+      orderHash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      maker: Addresses.mockAddresses[0]!,
+      taker: Addresses.mockAddresses[1]!,
+      makerAssetId: 42n, // Sell: maker sends tokens
+      takerAssetId: 0n,
+      makerAmountFilled: 1_000_000n,
+      takerAmountFilled: 800_000n,
+      fee: 0n,
+    });
+
+    const result = await Exchange.OrderFilled.processEvent({
+      event,
+      mockDb: seededDb,
+    });
+
+    const pos = result.entities.UserPosition.get(
+      `${Addresses.mockAddresses[0]!}-42`,
+    );
+    expect(pos).toBeDefined();
+    expect(pos!.amount).toBe(1_000_000n); // 2 - 1 = 1
+    // realizedPnl = 1_000_000 * (800_000 - 500_000) / 1_000_000 = 300_000
+    expect(pos!.realizedPnl).toBe(300_000n);
   });
 });

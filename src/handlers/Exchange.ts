@@ -1,4 +1,10 @@
 import { Exchange, type Orderbook, type OrdersMatchedGlobal } from "generated";
+import {
+  parseOrderFilled,
+  updateUserPositionWithBuy,
+  updateUserPositionWithSell,
+} from "../utils/pnl.js";
+import { COLLATERAL_SCALE } from "../utils/constants.js";
 
 const TRADE_TYPE_BUY = "Buy";
 const TRADE_TYPE_SELL = "Sell";
@@ -118,6 +124,31 @@ Exchange.OrderFilled.handler(async ({ event, context }) => {
       collateralSellVolume: newSellVol,
       scaledCollateralSellVolume: scaleBigInt(newSellVol),
     });
+  }
+
+  // PnL: Update user position based on order fill
+  const order = parseOrderFilled(event.params);
+  const price =
+    order.baseAmount > 0n
+      ? (order.quoteAmount * COLLATERAL_SCALE) / order.baseAmount
+      : 0n;
+
+  if (order.side === "BUY") {
+    await updateUserPositionWithBuy(
+      context,
+      order.account,
+      order.positionId,
+      price,
+      order.baseAmount,
+    );
+  } else {
+    await updateUserPositionWithSell(
+      context,
+      order.account,
+      order.positionId,
+      price,
+      order.baseAmount,
+    );
   }
 });
 

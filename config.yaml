@@ -49,11 +49,12 @@ contracts:
       - event: "OrdersMatched(bytes32 indexed takerOrderHash, address indexed takerOrderMaker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled)"
       - event: "TokenRegistered(uint256 indexed token0, uint256 indexed token1, bytes32 indexed conditionId)"
 
-  # Phase 3: Open Interest + Activity
+  # Phase 3: Open Interest + Activity (extended in Phase 4 with PnL)
   - name: ConditionalTokens
     abi_file_path: ./abis/ConditionalTokens.json
     events:
       - event: "ConditionPreparation(bytes32 indexed conditionId, address indexed oracle, bytes32 indexed questionId, uint256 outcomeSlotCount)"
+      - event: "ConditionResolution(bytes32 indexed conditionId, address indexed oracle, bytes32 indexed questionId, uint256 outcomeSlotCount, uint256[] payoutNumerators)"
       - event: "PositionSplit(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
       - event: "PositionsMerge(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
       - event: "PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)"
@@ -72,6 +73,16 @@ contracts:
     abi_file_path: ./abis/FixedProductMarketMakerFactory.json
     events:
       - event: "FixedProductMarketMakerCreation(address indexed creator, address fixedProductMarketMaker, address indexed conditionalTokens, address indexed collateralToken, bytes32[] conditionIds, uint256 fee)"
+
+  # Phase 4: Dynamic FPMM contracts (registered via FPMMFactory contractRegister)
+  - name: FixedProductMarketMaker
+    abi_file_path: ./abis/FixedProductMarketMaker.json
+    events:
+      - event: "FPMMBuy(address indexed buyer, uint256 investmentAmount, uint256 feeAmount, uint256 indexed outcomeIndex, uint256 outcomeTokensBought)"
+      - event: "FPMMSell(address indexed seller, uint256 returnAmount, uint256 feeAmount, uint256 indexed outcomeIndex, uint256 outcomeTokensSold)"
+      - event: "FPMMFundingAdded(address indexed funder, uint256[] amountsAdded, uint256 sharesMinted)"
+      - event: "FPMMFundingRemoved(address indexed funder, uint256[] amountsRemoved, uint256 collateralRemovedFromFeePool, uint256 sharesBurnt)"
+      - event: "Transfer(address indexed from, address indexed to, uint256 value)"
 
 field_selection:
   transaction_fields:
@@ -123,3 +134,6 @@ chains:
       - name: FPMMFactory
         address: "0x8B9805A2f595B6705e74F7310829f2d299D21522"
         start_block: 4023693
+
+      # Phase 4: Dynamic — no address, registered at runtime
+      - name: FixedProductMarketMaker
