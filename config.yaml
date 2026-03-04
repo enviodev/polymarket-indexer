@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: polymarket-indexer
+description: Unified Polymarket HyperIndex
+
+contracts:
+  # Phase 1A: Fee Module
+  - name: FeeModule
+    abi_file_path: ./abis/FeeModule.json
+    events:
+      - event: "FeeRefunded(bytes32 indexed orderHash, address indexed to, uint256 id, uint256 refund, uint256 indexed feeCharged)"
+
+  # Phase 1B: Sports Oracle
+  - name: UmaSportsOracle
+    abi_file_path: ./abis/UmaSportsOracle.json
+    events:
+      - event: "GameCreated(bytes32 indexed gameId, uint8 ordering, bytes ancillaryData, uint256 timestamp)"
+      - event: "GameSettled(bytes32 indexed gameId, uint256 indexed home, uint256 indexed away)"
+      - event: "GameEmergencySettled(bytes32 indexed gameId, uint256 indexed home, uint256 indexed away)"
+      - event: "GameCanceled(bytes32 indexed gameId)"
+      - event: "GamePaused(bytes32 indexed gameId)"
+      - event: "GameUnpaused(bytes32 indexed gameId)"
+      - event: "MarketCreated(bytes32 indexed marketId, bytes32 indexed gameId, bytes32 indexed conditionId, uint8 marketType, uint8 underdog, uint256 line)"
+      - event: "MarketPaused(bytes32 indexed marketId)"
+      - event: "MarketUnpaused(bytes32 indexed marketId)"
+      - event: "MarketResolved(bytes32 indexed marketId, uint256[] payouts)"
+      - event: "MarketEmergencyResolved(bytes32 indexed marketId, uint256[] payouts)"
+
+field_selection:
+  transaction_fields:
+    - hash
+    - from
+    - to
+
+chains:
+  - id: 137 # Polygon
+    start_block: 68931384
+    contracts:
+      # Phase 1A: Fee Module (both FeeModule + NegRiskFeeModule share same ABI)
+      - name: FeeModule
+        address:
+          - "0xE3f18aCc55091e2c48d883fc8C8413319d4Ab7b0"
+          - "0xB768891e3130F6dF18214Ac804d4DB76c2C37730"
+        start_block: 75253526
+
+      # Phase 1B: Sports Oracle
+      - name: UmaSportsOracle
+        address: "0xb21182d0494521Cf45DbbeEbb5A3ACAAb6d22093"
+        start_block: 68931384

@@ -1,0 +1,37 @@
+## ============================================================
+## Phase 1A: Fee Module
+## ============================================================
+
+type FeeRefunded {
+  id: ID!
+  orderHash: String! @index
+  tokenId: String! @index
+  timestamp: BigInt!
+  refundee: String! @index
+  feeRefunded: BigInt!
+  feeCharged: BigInt!
+  negRisk: Boolean!
+}
+
+## ============================================================
+## Phase 1B: Sports Oracle
+## ============================================================
+
+type Game {
+  id: ID!
+  ancillaryData: String!
+  ordering: String!
+  state: String! @index
+  homeScore: BigInt!
+  awayScore: BigInt!
+}
+
+type Market {
+  id: ID!
+  gameId: String! @index
+  state: String! @index
+  marketType: String!
+  underdog: String!
+  line: BigInt!
+  payouts: [BigInt!]!
+}
