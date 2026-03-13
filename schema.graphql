@@ -2,11 +2,11 @@
 ## Phase 1A: Fee Module
 ## ============================================================
 
-type FeeRefunded {
+type FeeRefunded @index(fields: ["refundee", ["timestamp", "DESC"]]) {
   id: ID!
   orderHash: String! @index
   tokenId: String! @index
-  timestamp: BigInt!
+  timestamp: BigInt! @index
   refundee: String! @index
   feeRefunded: BigInt!
   feeCharged: BigInt!
@@ -63,7 +63,7 @@ type MarketData {
   condition: String! @index
   outcomeIndex: BigInt
   marketName: String!
-  marketSlug: String!
+  marketSlug: String! @index
   outcomes: String!
   description: String!
   image: String!
@@ -71,15 +71,17 @@ type MarketData {
   endDate: String!
 }
 
-type OrderFilledEvent {
+type OrderFilledEvent
+  @index(fields: ["maker", ["timestamp", "DESC"]])
+  @index(fields: ["makerAssetId", ["timestamp", "DESC"]]) {
   id: ID!
   transactionHash: String!
   timestamp: BigInt! @index
   orderHash: String! @index
   maker: String! @index
   taker: String! @index
-  makerAssetId: String!
-  takerAssetId: String!
+  makerAssetId: String! @index
+  takerAssetId: String! @index
   makerAmountFilled: BigInt!
   takerAmountFilled: BigInt!
   fee: BigInt!
@@ -151,7 +153,9 @@ type GlobalOpenInterest {
 ## Phase 3B: Activity
 ## ============================================================
 
-type Split {
+type Split
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["condition", ["timestamp", "DESC"]]) {
   id: ID!
   timestamp: BigInt! @index
   stakeholder: String! @index
@@ -159,7 +163,9 @@ type Split {
   amount: BigInt!
 }
 
-type Merge {
+type Merge
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["condition", ["timestamp", "DESC"]]) {
   id: ID!
   timestamp: BigInt! @index
   stakeholder: String! @index
@@ -167,7 +173,9 @@ type Merge {
   amount: BigInt!
 }
 
-type Redemption {
+type Redemption
+  @index(fields: ["redeemer", ["timestamp", "DESC"]])
+  @index(fields: ["condition", ["timestamp", "DESC"]]) {
   id: ID!
   timestamp: BigInt! @index
   redeemer: String! @index
@@ -176,7 +184,9 @@ type Redemption {
   payout: BigInt!
 }
 
-type NegRiskConversion {
+type NegRiskConversion
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["negRiskMarketId", ["timestamp", "DESC"]]) {
   id: ID!
   timestamp: BigInt! @index
   stakeholder: String! @index
@@ -194,7 +204,7 @@ type Position {
 
 type FixedProductMarketMaker {
   id: ID!
-  creator: String!
+  creator: String! @index
   creationTimestamp: BigInt!
   creationTransactionHash: String!
   collateralToken: String!
@@ -227,7 +237,7 @@ type FixedProductMarketMaker {
 ## Phase 4A: PnL
 ## ============================================================
 
-type UserPosition {
+type UserPosition @index(fields: ["user", "tokenId"]) {
   id: ID!
   user: String! @index
   tokenId: BigInt! @index
@@ -253,7 +263,9 @@ enum TransactionType {
   Sell
 }
 
-type FpmmTransaction {
+type FpmmTransaction
+  @index(fields: ["market_id", ["timestamp", "DESC"]])
+  @index(fields: ["user", ["timestamp", "DESC"]]) {
   id: ID!
   type: TransactionType!
   timestamp: BigInt! @index
@@ -265,7 +277,9 @@ type FpmmTransaction {
   outcomeTokensAmount: BigInt!
 }
 
-type FpmmFundingAddition {
+type FpmmFundingAddition
+  @index(fields: ["fpmm_id", ["timestamp", "DESC"]])
+  @index(fields: ["funder", ["timestamp", "DESC"]]) {
   id: ID!
   timestamp: BigInt! @index
   fpmm_id: String! @index
@@ -275,7 +289,9 @@ type FpmmFundingAddition {
   sharesMinted: BigInt!
 }
 
-type FpmmFundingRemoval {
+type FpmmFundingRemoval
+  @index(fields: ["fpmm_id", ["timestamp", "DESC"]])
+  @index(fields: ["funder", ["timestamp", "DESC"]]) {
   id: ID!
   timestamp: BigInt! @index
   fpmm_id: String! @index
