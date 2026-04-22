@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      bignumber.js:
+        specifier: ^9.3.1
+        version: 9.3.1
       envio:
         specifier: 3.0.0-alpha.21
         version: 3.0.0-alpha.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
