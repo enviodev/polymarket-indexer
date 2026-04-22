@@ -333,9 +333,7 @@ type V2Market {
 
 type V2OrderFill
   @index(fields: ["maker", ["timestamp", "DESC"]])
-  @index(fields: ["taker", ["timestamp", "DESC"]])
   @index(fields: ["tokenId", ["timestamp", "DESC"]])
-  @index(fields: ["exchange", ["timestamp", "DESC"]])
 {
   id: ID!
   orderHash: String! @index
@@ -352,13 +350,12 @@ type V2OrderFill
   exchange: String! @index             # source exchange address
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
-  txFrom: String! @index               # transaction sender
+  transactionHash: String!
+  txFrom: String!                      # transaction sender
 }
 
 type V2OrderMatch
   @index(fields: ["takerOrderMaker", ["timestamp", "DESC"]])
-  @index(fields: ["tokenId", ["timestamp", "DESC"]])
 {
   id: ID!
   takerOrderHash: String! @index
@@ -371,18 +368,16 @@ type V2OrderMatch
   exchange: String! @index
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
+  transactionHash: String!
 }
 
-type V2FeeEvent
-  @index(fields: ["receiver", ["timestamp", "DESC"]])
-{
+type V2FeeEvent {
   id: ID!
   receiver: String! @index
   amount: BigInt!
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
+  transactionHash: String!
 }
 
 # ── V2 PolyUSD ──────────────────────────────────────────────────────
@@ -397,29 +392,27 @@ type V2PolyUSDTransfer
   amount: BigInt!
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
+  transactionHash: String!
 }
 
 type V2PolyUSDWrap
-  @index(fields: ["caller", ["timestamp", "DESC"]])
-  @index(fields: ["to", ["timestamp", "DESC"]])
   @index(fields: ["txFrom", ["timestamp", "DESC"]])
 {
   id: ID!
-  eventType: String! @index            # "wrap" | "unwrap"
+  eventType: String! @index            # "wrap" | "unwrap" | "wrap_negrisk_ctf" | "unwrap_negrisk_ctf"
   caller: String! @index               # msg.sender to pUSD (often an onramp contract)
-  asset: String! @index                # underlying asset (USDC or USDC.e)
+  asset: String!                       # underlying asset (USDC or USDC.e)
   to: String! @index                   # recipient of the wrapped token
   txFrom: String! @index               # originating EOA that initiated the tx
   amount: BigInt!
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
+  transactionHash: String!
 }
 
 type V2PolyUSDAccount {
   id: ID!                              # address
-  balance: BigInt! @index
+  balance: BigInt!
   totalWrapped: BigInt!
   totalUnwrapped: BigInt!
 }
@@ -434,12 +427,12 @@ type V2RewardDistribution
   amount: BigInt!
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
+  transactionHash: String!
 }
 
 type V2SponsoredMarket {
   id: ID!                              # marketId (bytes32)
-  startTime: Int! @index
+  startTime: Int!
   minSponsorDuration: Int!
   minSponsorAmount: BigInt!
   marketData: String!
@@ -460,7 +453,7 @@ type V2Sponsorship
   startTime: Int!
   endTime: Int!
   ratePerMinute: BigInt!
-  withdrawn: Boolean! @index
+  withdrawn: Boolean!
   returnedAmount: BigInt
   consumedAmount: BigInt
   isEarlyWithdraw: Boolean
@@ -495,16 +488,16 @@ type V2CtfSplit
 {
   id: ID!                              # chainId_block_logIdx
   stakeholder: String! @index
-  collateralToken: String! @index      # underlying collateral passed to adapter
+  collateralToken: String!             # underlying collateral passed to adapter
   parentCollectionId: String!
   conditionId: String! @index
   partition: [BigInt!]!
   amount: BigInt!
-  txFrom: String! @index               # originating EOA
+  txFrom: String!                      # originating EOA
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
-  isNegRisk: Boolean! @index           # true if via NegRiskCtfCollateralAdapter
+  transactionHash: String!
+  isNegRisk: Boolean!                  # true if via NegRiskCtfCollateralAdapter
 }
 
 type V2CtfMerge
@@ -513,16 +506,16 @@ type V2CtfMerge
 {
   id: ID!
   stakeholder: String! @index
-  collateralToken: String! @index
+  collateralToken: String!
   parentCollectionId: String!
   conditionId: String! @index
   partition: [BigInt!]!
   amount: BigInt!
-  txFrom: String! @index
+  txFrom: String!
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
-  isNegRisk: Boolean! @index
+  transactionHash: String!
+  isNegRisk: Boolean!
 }
 
 type V2CtfRedemption
@@ -531,16 +524,16 @@ type V2CtfRedemption
 {
   id: ID!
   redeemer: String! @index
-  collateralToken: String! @index
+  collateralToken: String!
   parentCollectionId: String!
   conditionId: String! @index
   indexSets: [BigInt!]!
   payout: BigInt!
-  txFrom: String! @index
+  txFrom: String!
   timestamp: Int! @index
   blockNumber: Int!
-  transactionHash: String! @index
-  isNegRisk: Boolean! @index
+  transactionHash: String!
+  isNegRisk: Boolean!
 }
 
 type V2CtfAdapterStats {
