@@ -84,6 +84,47 @@ contracts:
       - event: "FPMMFundingRemoved(address indexed funder, uint256[] amountsRemoved, uint256 collateralRemovedFromFeePool, uint256 sharesBurnt)"
       - event: "Transfer(address indexed from, address indexed to, uint256 value)"
 
+  # Phase 5: Polymarket V2 — CTF Exchange V2 (3 instances: standard, neg-risk, third)
+  - name: CTFExchangeV2
+    events:
+      - event: "OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint8 side, uint256 tokenId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee, bytes32 builder, bytes32 metadata)"
+      - event: "OrdersMatched(bytes32 indexed takerOrderHash, address indexed takerOrderMaker, uint8 side, uint256 tokenId, uint256 makerAmountFilled, uint256 takerAmountFilled)"
+      - event: "FeeCharged(address indexed receiver, uint256 amount)"
+      - event: "UserPaused(address indexed user, uint256 effectivePauseBlock)"
+      - event: "TradingPaused(address indexed pauser)"
+      - event: "TradingUnpaused(address indexed pauser)"
+      - event: "NewAdmin(address indexed newAdminAddress, address indexed admin)"
+      - event: "NewOperator(address indexed newOperatorAddress, address indexed admin)"
+
+  # Phase 5: PolyUSD (pUSD collateral token)
+  - name: PolyUSD
+    events:
+      - event: "Transfer(address indexed from, address indexed to, uint256 amount)"
+      - event: "Wrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+      - event: "Unwrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+
+  # Phase 5: Rewards — market sponsorship + reward distribution
+  - name: Rewards
+    events:
+      - event: "DistributedRewards(address indexed user, uint256 amount)"
+      - event: "MarketCreated(bytes32 indexed marketId, uint32 startTime, uint32 minSponsorDuration, uint256 minSponsorAmount, bytes marketData)"
+      - event: "Sponsored(bytes32 indexed marketId, address indexed sponsor, uint256 amount, uint32 startTime, uint32 endTime, uint256 ratePerMinute)"
+      - event: "Withdrawn(bytes32 indexed marketId, address indexed sponsor, uint256 returnedAmount, uint256 consumedAmount, bool isEarlyWithdraw)"
+      - event: "MarketClosed(bytes32 indexed marketId, uint32 closedAt)"
+
+  # Phase 5: CtfCollateralAdapter — pUSD-backed CTF position lifecycle
+  - name: CtfCollateralAdapter
+    events:
+      - event: "PositionSplit(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
+      - event: "PositionsMerge(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
+      - event: "PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)"
+
+  # Phase 5: NegRiskCtfCollateralAdapter — pUSD-backed neg-risk CTF + wrap/unwrap
+  - name: NegRiskCtfCollateralAdapter
+    events:
+      - event: "Wrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+      - event: "Unwrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+
 field_selection:
   transaction_fields:
     - hash
@@ -137,3 +178,31 @@ chains:
 
       # Phase 4: Dynamic — no address, registered at runtime
       - name: FixedProductMarketMaker
+
+      # Phase 5: Polymarket V2 — CTF Exchange V2 (3 deployed instances)
+      - name: CTFExchangeV2
+        address:
+          - "0xe111180000d2663c0091e4f400237545b87b996b"
+          - "0xe2222d279d744050d28e00520010520000310f59"
+          - "0xe2222d002000ba0053cef3375333610f64600036"
+        start_block: 84902320
+
+      # Phase 5: PolyUSD collateral token
+      - name: PolyUSD
+        address: "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb"
+        start_block: 84902320
+
+      # Phase 5: Rewards (market sponsorship)
+      - name: Rewards
+        address: "0xdd8db71ce3be8d71ff148b2163d64da181a29e8b"
+        start_block: 84902320
+
+      # Phase 5: CtfCollateralAdapter (pUSD-backed CTF positions)
+      - name: CtfCollateralAdapter
+        address: "0xada100874d00e3331d00f2007a9c336a65009718"
+        start_block: 84902320
+
+      # Phase 5: NegRiskCtfCollateralAdapter (pUSD-backed neg-risk CTF)
+      - name: NegRiskCtfCollateralAdapter
+        address: "0xada200001000ef00d07553cee7006808f895c6f1"
+        start_block: 84902320

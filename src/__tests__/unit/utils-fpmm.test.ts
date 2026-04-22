@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import BigNumber from "bignumber.js";
 import {
   nthRoot,
   calculatePrices,
@@ -40,19 +41,20 @@ describe("nthRoot", () => {
 describe("calculatePrices", () => {
   it("returns [0.5, 0.5] for balanced amounts", () => {
     const prices = calculatePrices([10n, 10n]);
-    expect(prices[0]).toBeCloseTo(0.5, 5);
-    expect(prices[1]).toBeCloseTo(0.5, 5);
+    expect(prices[0]!.toNumber()).toBeCloseTo(0.5, 5);
+    expect(prices[1]!.toNumber()).toBeCloseTo(0.5, 5);
   });
 
   it("returns approximately [0.75, 0.25] for [10, 30]", () => {
     const prices = calculatePrices([10n, 30n]);
-    expect(prices[0]).toBeCloseTo(0.75, 2);
-    expect(prices[1]).toBeCloseTo(0.25, 2);
+    expect(prices[0]!.toNumber()).toBeCloseTo(0.75, 2);
+    expect(prices[1]!.toNumber()).toBeCloseTo(0.25, 2);
   });
 
   it("returns [0, 0] for zero balances", () => {
     const prices = calculatePrices([0n, 0n]);
-    expect(prices).toEqual([0, 0]);
+    expect(prices[0]!.isEqualTo(0)).toBe(true);
+    expect(prices[1]!.isEqualTo(0)).toBe(true);
   });
 
   it("throws on [100n, 0n] due to division by zero in product/amounts[i]", () => {
@@ -63,15 +65,15 @@ describe("calculatePrices", () => {
 
 describe("scaleBigInt", () => {
   it("scales 1_000_000 to 1", () => {
-    expect(scaleBigInt(1_000_000n)).toBe(1);
+    expect(scaleBigInt(1_000_000n).isEqualTo(new BigNumber(1))).toBe(true);
   });
 
   it("scales 500_000 to 0.5", () => {
-    expect(scaleBigInt(500_000n)).toBe(0.5);
+    expect(scaleBigInt(500_000n).isEqualTo(new BigNumber(0.5))).toBe(true);
   });
 
   it("scales 0 to 0", () => {
-    expect(scaleBigInt(0n)).toBe(0);
+    expect(scaleBigInt(0n).isEqualTo(new BigNumber(0))).toBe(true);
   });
 });
 

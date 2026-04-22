@@ -307,3 +307,241 @@ type FpmmPoolMembership {
   funder: String! @index
   amount: BigInt!
 }
+
+## ============================================================
+## Phase 5: Polymarket V2 (CTF Exchange V2, PolyUSD, Rewards)
+## ============================================================
+
+# ── V2 Market Metadata (enriched via Gamma API) ─────────────────────
+
+type V2Market {
+  id: ID!                              # tokenId (decimal string)
+  question: String!
+  slug: String! @index
+  outcomes: String!                    # JSON array e.g. '["Yes","No"]'
+  outcomePrices: String!               # JSON array e.g. '["0.6","0.4"]'
+  description: String!
+  image: String!
+  startDate: String!
+  endDate: String!
+  conditionId: String! @index
+  fills: [V2OrderFill!]! @derivedFrom(field: "market")
+  matches: [V2OrderMatch!]! @derivedFrom(field: "market")
+}
+
+# ── V2 Trading ──────────────────────────────────────────────────────
+
+type V2OrderFill
+  @index(fields: ["maker", ["timestamp", "DESC"]])
+  @index(fields: ["tokenId", ["timestamp", "DESC"]])
+{
+  id: ID!
+  orderHash: String! @index
+  maker: String! @index
+  taker: String! @index
+  side: Int!                           # 0=BUY, 1=SELL
+  tokenId: BigInt! @index              # conditional token ID
+  market: V2Market                     # enriched from Gamma API
+  makerAmountFilled: BigInt!
+  takerAmountFilled: BigInt!
+  fee: BigInt!
+  builder: String! @index              # builder code (bytes32)
+  metadata: String!                    # metadata (bytes32)
+  exchange: String! @index             # source exchange address
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+  txFrom: String!                      # transaction sender
+}
+
+type V2OrderMatch
+  @index(fields: ["takerOrderMaker", ["timestamp", "DESC"]])
+{
+  id: ID!
+  takerOrderHash: String! @index
+  takerOrderMaker: String! @index
+  side: Int!                           # 0=BUY, 1=SELL
+  tokenId: BigInt! @index
+  market: V2Market                     # enriched from Gamma API
+  makerAmountFilled: BigInt!
+  takerAmountFilled: BigInt!
+  exchange: String! @index
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+}
+
+type V2FeeEvent {
+  id: ID!
+  receiver: String! @index
+  amount: BigInt!
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+}
+
+# ── V2 PolyUSD ──────────────────────────────────────────────────────
+
+type V2PolyUSDTransfer
+  @index(fields: ["from", ["timestamp", "DESC"]])
+  @index(fields: ["to", ["timestamp", "DESC"]])
+{
+  id: ID!
+  from: String! @index
+  to: String! @index
+  amount: BigInt!
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+}
+
+type V2PolyUSDWrap
+  @index(fields: ["txFrom", ["timestamp", "DESC"]])
+{
+  id: ID!
+  eventType: String! @index            # "wrap" | "unwrap" | "wrap_negrisk_ctf" | "unwrap_negrisk_ctf"
+  caller: String! @index               # msg.sender to pUSD (often an onramp contract)
+  asset: String!                       # underlying asset (USDC or USDC.e)
+  to: String! @index                   # recipient of the wrapped token
+  txFrom: String! @index               # originating EOA that initiated the tx
+  amount: BigInt!
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+}
+
+type V2PolyUSDAccount {
+  id: ID!                              # address
+  balance: BigInt!
+  totalWrapped: BigInt!
+  totalUnwrapped: BigInt!
+}
+
+# ── V2 Rewards ──────────────────────────────────────────────────────
+
+type V2RewardDistribution
+  @index(fields: ["user", ["timestamp", "DESC"]])
+{
+  id: ID!
+  user: String! @index
+  amount: BigInt!
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+}
+
+type V2SponsoredMarket {
+  id: ID!                              # marketId (bytes32)
+  startTime: Int!
+  minSponsorDuration: Int!
+  minSponsorAmount: BigInt!
+  marketData: String!
+  closed: Boolean! @index
+  closedAt: Int
+  createdAt: Int! @index
+  createdAtBlock: Int!
+}
+
+type V2Sponsorship
+  @index(fields: ["sponsor", ["timestamp", "DESC"]])
+  @index(fields: ["market", ["timestamp", "DESC"]])
+{
+  id: ID!                              # txHash-logIndex
+  market: V2SponsoredMarket!
+  sponsor: String! @index
+  amount: BigInt!
+  startTime: Int!
+  endTime: Int!
+  ratePerMinute: BigInt!
+  withdrawn: Boolean!
+  returnedAmount: BigInt
+  consumedAmount: BigInt
+  isEarlyWithdraw: Boolean
+  timestamp: Int! @index
+  blockNumber: Int!
+}
+
+# ── V2 Aggregate Stats ──────────────────────────────────────────────
+
+type V2ExchangeStats {
+  id: ID!                              # exchange address
+  totalOrdersFilled: BigInt!
+  totalOrdersMatched: BigInt!
+  totalVolume: BigInt!
+  totalFees: BigInt!
+  totalBuilderFills: BigInt!           # fills with non-zero builder code
+}
+
+type V2PolyUSDStats {
+  id: ID!                              # "polyusd"
+  totalSupply: BigInt!
+  totalWrapped: BigInt!
+  totalUnwrapped: BigInt!
+  totalTransfers: BigInt!
+}
+
+# ── V2 CTF Collateral Adapter (pUSD-backed position lifecycle) ──────
+
+type V2CtfSplit
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+{
+  id: ID!                              # chainId_block_logIdx
+  stakeholder: String! @index
+  collateralToken: String!             # underlying collateral passed to adapter
+  parentCollectionId: String!
+  conditionId: String! @index
+  partition: [BigInt!]!
+  amount: BigInt!
+  txFrom: String!                      # originating EOA
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+  isNegRisk: Boolean!                  # true if via NegRiskCtfCollateralAdapter
+}
+
+type V2CtfMerge
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+{
+  id: ID!
+  stakeholder: String! @index
+  collateralToken: String!
+  parentCollectionId: String!
+  conditionId: String! @index
+  partition: [BigInt!]!
+  amount: BigInt!
+  txFrom: String!
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+  isNegRisk: Boolean!
+}
+
+type V2CtfRedemption
+  @index(fields: ["redeemer", ["timestamp", "DESC"]])
+  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+{
+  id: ID!
+  redeemer: String! @index
+  collateralToken: String!
+  parentCollectionId: String!
+  conditionId: String! @index
+  indexSets: [BigInt!]!
+  payout: BigInt!
+  txFrom: String!
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String!
+  isNegRisk: Boolean!
+}
+
+type V2CtfAdapterStats {
+  id: ID!                              # adapter address
+  totalSplits: BigInt!
+  totalMerges: BigInt!
+  totalRedemptions: BigInt!
+  totalSplitVolume: BigInt!
+  totalMergeVolume: BigInt!
+  totalRedemptionPayout: BigInt!
+}

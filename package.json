@@ -11,10 +11,10 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "typescript": "5.9.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.18"
   },
   "dependencies": {
-    "envio": "3.0.0-alpha.18",
+    "envio": "3.0.0-alpha.21",
     "viem": "^2.0.0"
   },
   "optionalDependencies": {

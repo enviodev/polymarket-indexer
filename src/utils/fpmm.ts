@@ -1,5 +1,9 @@
-const COLLATERAL_SCALE_DEC = 1_000_000;
+import BigNumber from "bignumber.js";
+
+const COLLATERAL_SCALE_DEC = new BigNumber(1_000_000);
 const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
+
+export const ZERO_BD = new BigNumber(0);
 
 export { ADDRESS_ZERO };
 
@@ -35,9 +39,9 @@ export function nthRoot(x: bigint, n: number): bigint {
  * Calculate outcome token prices from amounts.
  * price[i] = product / amounts[i] / sum(product / amounts[j] for all j)
  */
-export function calculatePrices(outcomeTokenAmounts: bigint[]): number[] {
+export function calculatePrices(outcomeTokenAmounts: bigint[]): BigNumber[] {
   const len = outcomeTokenAmounts.length;
-  const prices = new Array<number>(len).fill(0);
+  const prices = new Array<BigNumber>(len).fill(ZERO_BD);
 
   let totalBalance = 0n;
   let product = 1n;
@@ -55,17 +59,18 @@ export function calculatePrices(outcomeTokenAmounts: bigint[]): number[] {
 
   if (denominator === 0n) return prices;
 
+  const denom = new BigNumber(denominator.toString());
   for (let i = 0; i < len; i++) {
     // price = (product / amounts[i]) / denominator
     const numerator = product / outcomeTokenAmounts[i]!;
-    prices[i] = Number(numerator) / Number(denominator);
+    prices[i] = new BigNumber(numerator.toString()).dividedBy(denom);
   }
 
   return prices;
 }
 
-export function scaleBigInt(value: bigint): number {
-  return Number(value) / COLLATERAL_SCALE_DEC;
+export function scaleBigInt(value: bigint): BigNumber {
+  return new BigNumber(value.toString()).dividedBy(COLLATERAL_SCALE_DEC);
 }
 
 export function maxBigInt(arr: bigint[]): bigint {

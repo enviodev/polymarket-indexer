@@ -3,21 +3,27 @@ import { createEffect, S } from "envio";
 export const getMarketMetadata = createEffect(
   {
     name: "getMarketMetadata",
-    input: S.string, // tokenId
+    input: S.string, // tokenId as decimal string
     output: S.union([
       S.schema({
         question: S.string,
         slug: S.string,
         outcomes: S.string,
+        outcomePrices: S.string,
         description: S.string,
         image: S.string,
         startDate: S.string,
         endDate: S.string,
+        conditionId: S.string,
       }),
       null,
     ]),
-    cache: false,
-    rateLimit: { calls: 280, per: 10_000 }, // 280 req / 10s — well under 300/10s limit
+    // Market metadata (question, slug, outcomes, conditionId) is immutable once
+    // the market exists. outcomePrices is a snapshot at first-fetch time; if the
+    // dashboard needs live prices, it should pull those separately from the CLOB
+    // orderbook — the indexer is not the right place for perpetually-fresh prices.
+    cache: true,
+    rateLimit: { calls: 280, per: 10_000 }, // 280 req / 10s — under Gamma API 300/10s limit
   },
   async ({ input: tokenId }) => {
     const res = await fetch(
@@ -29,10 +35,12 @@ export const getMarketMetadata = createEffect(
       question?: string;
       slug?: string;
       outcomes?: string;
+      outcomePrices?: string;
       description?: string;
       image?: string;
       startDate?: string;
       endDate?: string;
+      conditionId?: string;
     }>;
     const market = data[0];
     if (!market) return null;
@@ -41,10 +49,12 @@ export const getMarketMetadata = createEffect(
       question: market.question ?? "",
       slug: market.slug ?? "",
       outcomes: market.outcomes ?? "[]",
+      outcomePrices: market.outcomePrices ?? "[]",
       description: market.description ?? "",
       image: market.image ?? "",
       startDate: market.startDate ?? "",
       endDate: market.endDate ?? "",
+      conditionId: market.conditionId ?? "",
     };
   },
 );
