@@ -5,11 +5,11 @@ import {
   updateUserPositionWithSell,
 } from "../utils/pnl.js";
 import { COLLATERAL_SCALE } from "../utils/constants.js";
+import { scaleBigInt, ZERO_BD } from "../utils/fpmm.js";
 import { getMarketMetadata } from "../effects/marketMetadata.js";
 
 const TRADE_TYPE_BUY = "Buy";
 const TRADE_TYPE_SELL = "Sell";
-const COLLATERAL_SCALE_DEC = 1_000_000;
 
 function getOrderSide(makerAssetId: bigint): string {
   return makerAssetId === 0n ? TRADE_TYPE_BUY : TRADE_TYPE_SELL;
@@ -21,10 +21,6 @@ function getOrderSize(
   side: string,
 ): bigint {
   return side === TRADE_TYPE_BUY ? makerAmountFilled : takerAmountFilled;
-}
-
-function scaleBigInt(value: bigint): number {
-  return Number(value) / COLLATERAL_SCALE_DEC;
 }
 
 async function getOrCreateOrderbook(
@@ -39,11 +35,11 @@ async function getOrCreateOrderbook(
     buysQuantity: 0n,
     sellsQuantity: 0n,
     collateralVolume: 0n,
-    scaledCollateralVolume: 0,
+    scaledCollateralVolume: ZERO_BD,
     collateralBuyVolume: 0n,
-    scaledCollateralBuyVolume: 0,
+    scaledCollateralBuyVolume: ZERO_BD,
     collateralSellVolume: 0n,
-    scaledCollateralSellVolume: 0,
+    scaledCollateralSellVolume: ZERO_BD,
   };
 }
 
@@ -58,11 +54,11 @@ async function getOrCreateGlobal(
     buysQuantity: 0n,
     sellsQuantity: 0n,
     collateralVolume: 0n,
-    scaledCollateralVolume: 0,
+    scaledCollateralVolume: ZERO_BD,
     collateralBuyVolume: 0n,
-    scaledCollateralBuyVolume: 0,
+    scaledCollateralBuyVolume: ZERO_BD,
     collateralSellVolume: 0n,
-    scaledCollateralSellVolume: 0,
+    scaledCollateralSellVolume: ZERO_BD,
   };
 }
 

@@ -112,6 +112,19 @@ contracts:
       - event: "Withdrawn(bytes32 indexed marketId, address indexed sponsor, uint256 returnedAmount, uint256 consumedAmount, bool isEarlyWithdraw)"
       - event: "MarketClosed(bytes32 indexed marketId, uint32 closedAt)"
 
+  # Phase 5: CtfCollateralAdapter — pUSD-backed CTF position lifecycle
+  - name: CtfCollateralAdapter
+    events:
+      - event: "PositionSplit(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
+      - event: "PositionsMerge(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
+      - event: "PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)"
+
+  # Phase 5: NegRiskCtfCollateralAdapter — pUSD-backed neg-risk CTF + wrap/unwrap
+  - name: NegRiskCtfCollateralAdapter
+    events:
+      - event: "Wrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+      - event: "Unwrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+
 field_selection:
   transaction_fields:
     - hash
@@ -182,4 +195,14 @@ chains:
       # Phase 5: Rewards (market sponsorship)
       - name: Rewards
         address: "0xdd8db71ce3be8d71ff148b2163d64da181a29e8b"
+        start_block: 84902320
+
+      # Phase 5: CtfCollateralAdapter (pUSD-backed CTF positions)
+      - name: CtfCollateralAdapter
+        address: "0xada100874d00e3331d00f2007a9c336a65009718"
+        start_block: 84902320
+
+      # Phase 5: NegRiskCtfCollateralAdapter (pUSD-backed neg-risk CTF)
+      - name: NegRiskCtfCollateralAdapter
+        address: "0xada200001000ef00d07553cee7006808f895c6f1"
         start_block: 84902320

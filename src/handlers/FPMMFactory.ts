@@ -1,6 +1,6 @@
 import { FPMMFactory } from "generated";
 import { CONDITIONAL_TOKENS } from "../utils/constants.js";
-import { timestampToDay } from "../utils/fpmm.js";
+import { timestampToDay, ZERO_BD } from "../utils/fpmm.js";
 
 const CONDITIONAL_TOKENS_LOWER = CONDITIONAL_TOKENS.toLowerCase();
 
@@ -50,18 +50,18 @@ FPMMFactory.FixedProductMarketMakerCreation.handler(
       // Zero-initialized metrics
       totalSupply: 0n,
       outcomeTokenAmounts: Array(outcomeSlotCount).fill(0n),
-      outcomeTokenPrices: Array(outcomeSlotCount).fill(0),
+      outcomeTokenPrices: Array(outcomeSlotCount).fill(ZERO_BD),
       lastActiveDay: timestampToDay(event.block.timestamp),
       collateralVolume: 0n,
-      scaledCollateralVolume: 0,
+      scaledCollateralVolume: ZERO_BD,
       collateralBuyVolume: 0n,
-      scaledCollateralBuyVolume: 0,
+      scaledCollateralBuyVolume: ZERO_BD,
       collateralSellVolume: 0n,
-      scaledCollateralSellVolume: 0,
+      scaledCollateralSellVolume: ZERO_BD,
       liquidityParameter: 0n,
-      scaledLiquidityParameter: 0,
+      scaledLiquidityParameter: ZERO_BD,
       feeVolume: 0n,
-      scaledFeeVolume: 0,
+      scaledFeeVolume: ZERO_BD,
       tradesQuantity: 0n,
       buysQuantity: 0n,
       sellsQuantity: 0n,

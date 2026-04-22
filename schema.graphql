@@ -403,12 +403,14 @@ type V2PolyUSDTransfer
 type V2PolyUSDWrap
   @index(fields: ["caller", ["timestamp", "DESC"]])
   @index(fields: ["to", ["timestamp", "DESC"]])
+  @index(fields: ["txFrom", ["timestamp", "DESC"]])
 {
   id: ID!
   eventType: String! @index            # "wrap" | "unwrap"
-  caller: String! @index
+  caller: String! @index               # msg.sender to pUSD (often an onramp contract)
   asset: String! @index                # underlying asset (USDC or USDC.e)
-  to: String! @index
+  to: String! @index                   # recipient of the wrapped token
+  txFrom: String! @index               # originating EOA that initiated the tx
   amount: BigInt!
   timestamp: Int! @index
   blockNumber: Int!
@@ -483,4 +485,70 @@ type V2PolyUSDStats {
   totalWrapped: BigInt!
   totalUnwrapped: BigInt!
   totalTransfers: BigInt!
+}
+
+# ── V2 CTF Collateral Adapter (pUSD-backed position lifecycle) ──────
+
+type V2CtfSplit
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+{
+  id: ID!                              # chainId_block_logIdx
+  stakeholder: String! @index
+  collateralToken: String! @index      # underlying collateral passed to adapter
+  parentCollectionId: String!
+  conditionId: String! @index
+  partition: [BigInt!]!
+  amount: BigInt!
+  txFrom: String! @index               # originating EOA
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String! @index
+  isNegRisk: Boolean! @index           # true if via NegRiskCtfCollateralAdapter
+}
+
+type V2CtfMerge
+  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
+  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+{
+  id: ID!
+  stakeholder: String! @index
+  collateralToken: String! @index
+  parentCollectionId: String!
+  conditionId: String! @index
+  partition: [BigInt!]!
+  amount: BigInt!
+  txFrom: String! @index
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String! @index
+  isNegRisk: Boolean! @index
+}
+
+type V2CtfRedemption
+  @index(fields: ["redeemer", ["timestamp", "DESC"]])
+  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+{
+  id: ID!
+  redeemer: String! @index
+  collateralToken: String! @index
+  parentCollectionId: String!
+  conditionId: String! @index
+  indexSets: [BigInt!]!
+  payout: BigInt!
+  txFrom: String! @index
+  timestamp: Int! @index
+  blockNumber: Int!
+  transactionHash: String! @index
+  isNegRisk: Boolean! @index
+}
+
+type V2CtfAdapterStats {
+  id: ID!                              # adapter address
+  totalSplits: BigInt!
+  totalMerges: BigInt!
+  totalRedemptions: BigInt!
+  totalSplitVolume: BigInt!
+  totalMergeVolume: BigInt!
+  totalRedemptionPayout: BigInt!
 }
