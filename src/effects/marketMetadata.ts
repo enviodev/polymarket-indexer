@@ -26,23 +26,29 @@ export const getMarketMetadata = createEffect(
     rateLimit: { calls: 280, per: 10_000 }, // 280 req / 10s — under Gamma API 300/10s limit
   },
   async ({ input: tokenId }) => {
+    // /markets/keyset is the cursor-paginated replacement for /markets.
+    // The old /markets endpoint is deprecated on 2026-05-01. Same query
+    // params work; the response is wrapped in { markets: [...] } instead
+    // of being a bare array.
     const res = await fetch(
-      `https://gamma-api.polymarket.com/markets?clob_token_ids=${tokenId}`,
+      `https://gamma-api.polymarket.com/markets/keyset?clob_token_ids=${tokenId}`,
     );
     if (!res.ok) return null;
 
-    const data = (await res.json()) as Array<{
-      question?: string;
-      slug?: string;
-      outcomes?: string;
-      outcomePrices?: string;
-      description?: string;
-      image?: string;
-      startDate?: string;
-      endDate?: string;
-      conditionId?: string;
-    }>;
-    const market = data[0];
+    const body = (await res.json()) as {
+      markets?: Array<{
+        question?: string;
+        slug?: string;
+        outcomes?: string;
+        outcomePrices?: string;
+        description?: string;
+        image?: string;
+        startDate?: string;
+        endDate?: string;
+        conditionId?: string;
+      }>;
+    };
+    const market = body.markets?.[0];
     if (!market) return null;
 
     return {
