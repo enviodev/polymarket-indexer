@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../../handlers/v2/Rewards.js";
 
 const MARKET_ID =
@@ -149,5 +149,77 @@ describe("Rewards.MarketClosed on missing market", () => {
 
     const market = await indexer.V2SponsoredMarket.get(MARKET_ID);
     expect(market).toBeUndefined();
+  });
+});
+
+describe("Rewards.Withdrawn", () => {
+  it("marks the sponsorship withdrawn with the event amounts", async () => {
+    const indexer = createTestIndexer();
+
+    await indexer.process({
+      chains: {
+        137: {
+          simulate: [
+            {
+              contract: "Rewards",
+              event: "Sponsored",
+              params: {
+                marketId: MARKET_ID,
+                sponsor: SPONSOR,
+                amount: 500_000n,
+                startTime: 1714000000n,
+                endTime: 1714086400n,
+                ratePerMinute: 100n,
+              },
+            },
+            {
+              contract: "Rewards",
+              event: "Withdrawn",
+              params: {
+                marketId: MARKET_ID,
+                sponsor: SPONSOR,
+                returnedAmount: 300_000n,
+                consumedAmount: 200_000n,
+                isEarlyWithdraw: true,
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    const sponsorships = await indexer.V2Sponsorship.getAll();
+    expect(sponsorships.length).toBe(1);
+    const s = sponsorships[0]!;
+    expect(s.withdrawn).toBe(true);
+    expect(s.returnedAmount).toBe(300_000n);
+    expect(s.consumedAmount).toBe(200_000n);
+    expect(s.isEarlyWithdraw).toBe(true);
+  });
+
+  it("no-ops when there is no matching open sponsorship", async () => {
+    const indexer = createTestIndexer();
+
+    await indexer.process({
+      chains: {
+        137: {
+          simulate: [
+            {
+              contract: "Rewards",
+              event: "Withdrawn",
+              params: {
+                marketId: MARKET_ID,
+                sponsor: SPONSOR,
+                returnedAmount: 1n,
+                consumedAmount: 1n,
+                isEarlyWithdraw: false,
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    expect((await indexer.V2Sponsorship.getAll()).length).toBe(0);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../handlers/Exchange.js";
 
 const MAKER = "0x1111111111111111111111111111111111111111";

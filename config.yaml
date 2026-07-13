@@ -58,6 +58,10 @@ contracts:
       - event: "PositionSplit(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
       - event: "PositionsMerge(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
       - event: "PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)"
+      # ERC1155 transfers, narrowed via handler `where` filters to V2 adapter
+      # flows (user-attributed splits/merges/redemptions via CtfCollateralAdapter)
+      - event: "TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)"
+      - event: "TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)"
 
   - name: NegRiskAdapter
     abi_file_path: ./abis/NegRiskAdapter.json

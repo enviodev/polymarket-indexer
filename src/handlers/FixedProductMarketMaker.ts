@@ -1,4 +1,4 @@
-import { FixedProductMarketMaker } from "generated";
+import { indexer } from "envio";
 import { COLLATERAL_SCALE } from "../utils/constants.js";
 import {
   nthRoot,
@@ -36,7 +36,9 @@ async function loadPoolMembership(
 // FPMMBuy — FPMM metrics + PnL + transaction record
 // ============================================================
 
-FixedProductMarketMaker.FPMMBuy.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "FixedProductMarketMaker", event: "FPMMBuy" },
+  async ({ event, context }) => {
   const fpmmAddress = event.srcAddress;
   const fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
   if (!fpmm) return;
@@ -120,13 +122,16 @@ FixedProductMarketMaker.FPMMBuy.handler(async ({ event, context }) => {
       }
     }
   }
-});
+  },
+);
 
 // ============================================================
 // FPMMSell — FPMM metrics + PnL + transaction record
 // ============================================================
 
-FixedProductMarketMaker.FPMMSell.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "FixedProductMarketMaker", event: "FPMMSell" },
+  async ({ event, context }) => {
   const fpmmAddress = event.srcAddress;
   const fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
   if (!fpmm) return;
@@ -208,13 +213,16 @@ FixedProductMarketMaker.FPMMSell.handler(async ({ event, context }) => {
       }
     }
   }
-});
+  },
+);
 
 // ============================================================
 // FPMMFundingAdded — FPMM metrics + PnL + record
 // ============================================================
 
-FixedProductMarketMaker.FPMMFundingAdded.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "FixedProductMarketMaker", event: "FPMMFundingAdded" },
+  async ({ event, context }) => {
   const fpmmAddress = event.srcAddress;
   const fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
   if (!fpmm) return;
@@ -314,13 +322,15 @@ FixedProductMarketMaker.FPMMFundingAdded.handler(async ({ event, context }) => {
       event.params.sharesMinted,
     );
   }
-});
+  },
+);
 
 // ============================================================
 // FPMMFundingRemoved — FPMM metrics + PnL + record
 // ============================================================
 
-FixedProductMarketMaker.FPMMFundingRemoved.handler(
+indexer.onEvent(
+  { contract: "FixedProductMarketMaker", event: "FPMMFundingRemoved" },
   async ({ event, context }) => {
     const fpmmAddress = event.srcAddress;
     const fpmm = await context.FixedProductMarketMaker.get(fpmmAddress);
@@ -394,10 +404,13 @@ FixedProductMarketMaker.FPMMFundingRemoved.handler(
       );
     }
 
-    // Sell LP shares
+    // Sell LP shares. Proceeds per share = everything received for burning
+    // them: the outcome tokens (tokensCost, booked as buys above) plus the
+    // collateral paid out from the fee pool — mirror of the FundingAdded
+    // convention where lpShareCost = collateral in - sendback token value.
     if (event.params.sharesBurnt > 0n) {
       const lpSalePrice =
-        ((event.params.collateralRemovedFromFeePool - tokensCost) *
+        ((event.params.collateralRemovedFromFeePool + tokensCost) *
           COLLATERAL_SCALE) /
         event.params.sharesBurnt;
 
@@ -417,7 +430,9 @@ FixedProductMarketMaker.FPMMFundingRemoved.handler(
 // Transfer — pool share tracking
 // ============================================================
 
-FixedProductMarketMaker.Transfer.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "FixedProductMarketMaker", event: "Transfer" },
+  async ({ event, context }) => {
   const fpmmAddress = event.srcAddress;
   const from = event.params.from;
   const to = event.params.to;
@@ -438,4 +453,5 @@ FixedProductMarketMaker.Transfer.handler(async ({ event, context }) => {
       amount: toMembership.amount + value,
     });
   }
-});
+  },
+);

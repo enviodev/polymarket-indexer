@@ -14,7 +14,7 @@ describe("HyperSync - FeeModule", () => {
   // Existing: FeeRefunded batch
   // ============================================================
   it("should index FeeRefunded events from FeeModule start block range", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -55,7 +55,7 @@ describe("HyperSync - FeeModule", () => {
   // New: NegRiskFeeModule events
   // ============================================================
   it("should index NegRiskFeeModule events with negRisk=true", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

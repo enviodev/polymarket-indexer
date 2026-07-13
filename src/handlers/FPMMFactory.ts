@@ -1,4 +1,4 @@
-import { FPMMFactory } from "generated";
+import { indexer } from "envio";
 import { CONDITIONAL_TOKENS } from "../utils/constants.js";
 import { timestampToDay, ZERO_BD } from "../utils/fpmm.js";
 
@@ -8,9 +8,12 @@ const CONDITIONAL_TOKENS_LOWER = CONDITIONAL_TOKENS.toLowerCase();
 // contractRegister — register dynamic FPMM addresses (MUST be before handler)
 // ============================================================
 
-FPMMFactory.FixedProductMarketMakerCreation.contractRegister(
-  ({ event, context }) => {
-    context.addFixedProductMarketMaker(event.params.fixedProductMarketMaker);
+indexer.contractRegister(
+  { contract: "FPMMFactory", event: "FixedProductMarketMakerCreation" },
+  async ({ event, context }) => {
+    context.chain.FixedProductMarketMaker.add(
+      event.params.fixedProductMarketMaker,
+    );
   },
 );
 
@@ -18,7 +21,8 @@ FPMMFactory.FixedProductMarketMakerCreation.contractRegister(
 // FixedProductMarketMakerCreation — create FPMM entity
 // ============================================================
 
-FPMMFactory.FixedProductMarketMakerCreation.handler(
+indexer.onEvent(
+  { contract: "FPMMFactory", event: "FixedProductMarketMakerCreation" },
   async ({ event, context }) => {
     const fpmmAddress = event.params.fixedProductMarketMaker;
     const conditionalTokensAddress =

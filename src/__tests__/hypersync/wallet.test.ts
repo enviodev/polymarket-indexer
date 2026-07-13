@@ -14,7 +14,7 @@ describe("HyperSync - Wallet", () => {
   // Existing: SafeProxyFactory wallet creation
   // ============================================================
   it("should create Wallet entities from ProxyCreation events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -51,7 +51,7 @@ describe("HyperSync - Wallet", () => {
   // New: RelayHub TransactionRelayed
   // ============================================================
   it("should process RelayHub TransactionRelayed events for wallet creation", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -83,7 +83,7 @@ describe("HyperSync - Wallet", () => {
   // New: USDC Transfer to wallet
   // ============================================================
   it("should process USDC transfers after wallet creation", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

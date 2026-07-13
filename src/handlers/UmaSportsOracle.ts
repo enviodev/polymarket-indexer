@@ -1,4 +1,4 @@
-import { UmaSportsOracle } from "generated";
+import { indexer } from "envio";
 
 // State constants
 const GameStateCreated = "Created";
@@ -31,119 +31,144 @@ function getMarketUnderdog(underdogEnum: bigint): string {
 // Game event handlers
 // ============================================================
 
-UmaSportsOracle.GameCreated.handler(async ({ event, context }) => {
-  const gameId = event.params.gameId.toLowerCase();
-  context.Game.set({
-    id: gameId,
-    ancillaryData: event.params.ancillaryData,
-    ordering: getGameOrdering(event.params.ordering),
-    state: GameStateCreated,
-    homeScore: 0n,
-    awayScore: 0n,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "GameCreated" },
+  async ({ event, context }) => {
+    const gameId = event.params.gameId.toLowerCase();
+    context.Game.set({
+      id: gameId,
+      ancillaryData: event.params.ancillaryData,
+      ordering: getGameOrdering(event.params.ordering),
+      state: GameStateCreated,
+      homeScore: 0n,
+      awayScore: 0n,
+    });
+  },
+);
 
-UmaSportsOracle.GameSettled.handler(async ({ event, context }) => {
-  const gameId = event.params.gameId.toLowerCase();
-  const game = await context.Game.get(gameId);
-  if (!game) {
-    context.log.error(`Game not found: ${gameId}`);
-    return;
-  }
-  context.Game.set({
-    ...game,
-    state: GameStateSettled,
-    homeScore: event.params.home,
-    awayScore: event.params.away,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "GameSettled" },
+  async ({ event, context }) => {
+    const gameId = event.params.gameId.toLowerCase();
+    const game = await context.Game.get(gameId);
+    if (!game) {
+      context.log.error(`Game not found: ${gameId}`);
+      return;
+    }
+    context.Game.set({
+      ...game,
+      state: GameStateSettled,
+      homeScore: event.params.home,
+      awayScore: event.params.away,
+    });
+  },
+);
 
-UmaSportsOracle.GameEmergencySettled.handler(async ({ event, context }) => {
-  const gameId = event.params.gameId.toLowerCase();
-  const game = await context.Game.get(gameId);
-  if (!game) {
-    context.log.error(`Game not found: ${gameId}`);
-    return;
-  }
-  context.Game.set({
-    ...game,
-    state: GameStateEmergencySettled,
-    homeScore: event.params.home,
-    awayScore: event.params.away,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "GameEmergencySettled" },
+  async ({ event, context }) => {
+    const gameId = event.params.gameId.toLowerCase();
+    const game = await context.Game.get(gameId);
+    if (!game) {
+      context.log.error(`Game not found: ${gameId}`);
+      return;
+    }
+    context.Game.set({
+      ...game,
+      state: GameStateEmergencySettled,
+      homeScore: event.params.home,
+      awayScore: event.params.away,
+    });
+  },
+);
 
-UmaSportsOracle.GameCanceled.handler(async ({ event, context }) => {
-  const gameId = event.params.gameId.toLowerCase();
-  const game = await context.Game.get(gameId);
-  if (!game) {
-    context.log.error(`Game not found: ${gameId}`);
-    return;
-  }
-  context.Game.set({
-    ...game,
-    state: GameStateCanceled,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "GameCanceled" },
+  async ({ event, context }) => {
+    const gameId = event.params.gameId.toLowerCase();
+    const game = await context.Game.get(gameId);
+    if (!game) {
+      context.log.error(`Game not found: ${gameId}`);
+      return;
+    }
+    context.Game.set({
+      ...game,
+      state: GameStateCanceled,
+    });
+  },
+);
 
-UmaSportsOracle.GamePaused.handler(async ({ event, context }) => {
-  const gameId = event.params.gameId.toLowerCase();
-  const game = await context.Game.get(gameId);
-  if (!game) {
-    context.log.error(`Game not found: ${gameId}`);
-    return;
-  }
-  context.Game.set({
-    ...game,
-    state: GameStatePaused,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "GamePaused" },
+  async ({ event, context }) => {
+    const gameId = event.params.gameId.toLowerCase();
+    const game = await context.Game.get(gameId);
+    if (!game) {
+      context.log.error(`Game not found: ${gameId}`);
+      return;
+    }
+    context.Game.set({
+      ...game,
+      state: GameStatePaused,
+    });
+  },
+);
 
-UmaSportsOracle.GameUnpaused.handler(async ({ event, context }) => {
-  const gameId = event.params.gameId.toLowerCase();
-  const game = await context.Game.get(gameId);
-  if (!game) {
-    context.log.error(`Game not found: ${gameId}`);
-    return;
-  }
-  context.Game.set({
-    ...game,
-    state: GameStateCreated, // Unpaused reverts to Created state
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "GameUnpaused" },
+  async ({ event, context }) => {
+    const gameId = event.params.gameId.toLowerCase();
+    const game = await context.Game.get(gameId);
+    if (!game) {
+      context.log.error(`Game not found: ${gameId}`);
+      return;
+    }
+    context.Game.set({
+      ...game,
+      state: GameStateCreated, // Unpaused reverts to Created state
+    });
+  },
+);
 
 // ============================================================
 // Market event handlers
 // ============================================================
 
-UmaSportsOracle.MarketCreated.handler(async ({ event, context }) => {
-  const marketId = event.params.marketId.toLowerCase();
-  context.Market.set({
-    id: marketId,
-    gameId: event.params.gameId.toLowerCase(),
-    state: MarketStateCreated,
-    marketType: getMarketType(event.params.marketType),
-    underdog: getMarketUnderdog(event.params.underdog),
-    line: event.params.line,
-    payouts: [],
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "MarketCreated" },
+  async ({ event, context }) => {
+    const marketId = event.params.marketId.toLowerCase();
+    context.Market.set({
+      id: marketId,
+      gameId: event.params.gameId.toLowerCase(),
+      state: MarketStateCreated,
+      marketType: getMarketType(event.params.marketType),
+      underdog: getMarketUnderdog(event.params.underdog),
+      line: event.params.line,
+      payouts: [],
+    });
+  },
+);
 
-UmaSportsOracle.MarketResolved.handler(async ({ event, context }) => {
-  const marketId = event.params.marketId.toLowerCase();
-  const market = await context.Market.get(marketId);
-  if (!market) {
-    context.log.error(`Market not found: ${marketId}`);
-    return;
-  }
-  context.Market.set({
-    ...market,
-    state: MarketStateResolved,
-    payouts: event.params.payouts,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "MarketResolved" },
+  async ({ event, context }) => {
+    const marketId = event.params.marketId.toLowerCase();
+    const market = await context.Market.get(marketId);
+    if (!market) {
+      context.log.error(`Market not found: ${marketId}`);
+      return;
+    }
+    context.Market.set({
+      ...market,
+      state: MarketStateResolved,
+      payouts: event.params.payouts,
+    });
+  },
+);
 
-UmaSportsOracle.MarketEmergencyResolved.handler(
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "MarketEmergencyResolved" },
   async ({ event, context }) => {
     const marketId = event.params.marketId.toLowerCase();
     const market = await context.Market.get(marketId);
@@ -159,28 +184,34 @@ UmaSportsOracle.MarketEmergencyResolved.handler(
   },
 );
 
-UmaSportsOracle.MarketPaused.handler(async ({ event, context }) => {
-  const marketId = event.params.marketId.toLowerCase();
-  const market = await context.Market.get(marketId);
-  if (!market) {
-    context.log.error(`Market not found: ${marketId}`);
-    return;
-  }
-  context.Market.set({
-    ...market,
-    state: MarketStatePaused,
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "MarketPaused" },
+  async ({ event, context }) => {
+    const marketId = event.params.marketId.toLowerCase();
+    const market = await context.Market.get(marketId);
+    if (!market) {
+      context.log.error(`Market not found: ${marketId}`);
+      return;
+    }
+    context.Market.set({
+      ...market,
+      state: MarketStatePaused,
+    });
+  },
+);
 
-UmaSportsOracle.MarketUnpaused.handler(async ({ event, context }) => {
-  const marketId = event.params.marketId.toLowerCase();
-  const market = await context.Market.get(marketId);
-  if (!market) {
-    context.log.error(`Market not found: ${marketId}`);
-    return;
-  }
-  context.Market.set({
-    ...market,
-    state: MarketStateCreated, // Unpaused reverts to Created state
-  });
-});
+indexer.onEvent(
+  { contract: "UmaSportsOracle", event: "MarketUnpaused" },
+  async ({ event, context }) => {
+    const marketId = event.params.marketId.toLowerCase();
+    const market = await context.Market.get(marketId);
+    if (!market) {
+      context.log.error(`Market not found: ${marketId}`);
+      return;
+    }
+    context.Market.set({
+      ...market,
+      state: MarketStateCreated, // Unpaused reverts to Created state
+    });
+  },
+);

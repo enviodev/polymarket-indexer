@@ -14,7 +14,7 @@ describe("HyperSync - FPMM", () => {
   // Existing: batch creation
   // ============================================================
   it("should register multiple FPMMs in blocks 4782917-4782977", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -52,7 +52,7 @@ describe("HyperSync - FPMM", () => {
   // New: FPMM trading lifecycle
   // ============================================================
   it("should process FPMM trading events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -115,7 +115,7 @@ describe("HyperSync - FPMM", () => {
   // New: FPMMFundingAdded
   // ============================================================
   it("should process FPMMFundingAdded events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -155,7 +155,7 @@ describe("HyperSync - FPMM", () => {
   // New: FPMMFundingRemoved
   // ============================================================
   it("should process FPMMFundingRemoved events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -190,7 +190,7 @@ describe("HyperSync - FPMM", () => {
   // New: FPMM Transfer tracking
   // ============================================================
   it("should track FPMM pool membership via Transfer events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
