@@ -14,7 +14,7 @@ describe("HyperSync - NegRiskAdapter", () => {
   // Existing: NegRiskEvent creation + questionCount
   // ============================================================
   it("should create NegRiskEvent and increment questionCount", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -44,7 +44,7 @@ describe("HyperSync - NegRiskAdapter", () => {
   // New: NegRisk PositionSplit
   // ============================================================
   it("should process NegRisk PositionSplit events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -77,7 +77,7 @@ describe("HyperSync - NegRiskAdapter", () => {
   // New: NegRisk PositionsMerge
   // ============================================================
   it("should process NegRisk PositionsMerge events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -109,7 +109,7 @@ describe("HyperSync - NegRiskAdapter", () => {
   // New: NegRisk PayoutRedemption
   // ============================================================
   it("should process NegRisk PayoutRedemption events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -143,7 +143,7 @@ describe("HyperSync - NegRiskAdapter", () => {
   // New: NegRisk PositionsConverted
   // ============================================================
   it("should process NegRisk PositionsConverted events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

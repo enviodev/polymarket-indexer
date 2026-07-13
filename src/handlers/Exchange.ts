@@ -1,4 +1,7 @@
-import { Exchange, type Orderbook, type OrdersMatchedGlobal } from "generated";
+import { indexer, type Entity } from "envio";
+
+type Orderbook = Entity<"Orderbook">;
+type OrdersMatchedGlobal = Entity<"OrdersMatchedGlobal">;
 import {
   parseOrderFilled,
   updateUserPositionWithBuy,
@@ -66,7 +69,9 @@ async function getOrCreateGlobal(
 // OrderFilled — individual order fill records + orderbook updates
 // ============================================================
 
-Exchange.OrderFilled.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "Exchange", event: "OrderFilled" },
+  async ({ event, context }) => {
   const makerAssetId = event.params.makerAssetId;
   const takerAssetId = event.params.takerAssetId;
   const side = getOrderSide(makerAssetId);
@@ -147,13 +152,16 @@ Exchange.OrderFilled.handler(async ({ event, context }) => {
       order.baseAmount,
     );
   }
-});
+  },
+);
 
 // ============================================================
 // OrdersMatched — batch match records + global volume
 // ============================================================
 
-Exchange.OrdersMatched.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "Exchange", event: "OrdersMatched" },
+  async ({ event, context }) => {
   // Note: In the original subgraph, amounts are swapped for OrdersMatched
   const makerAmountFilled = event.params.takerAmountFilled;
   const takerAmountFilled = event.params.makerAmountFilled;
@@ -197,13 +205,16 @@ Exchange.OrdersMatched.handler(async ({ event, context }) => {
       scaledCollateralSellVolume: scaleBigInt(newSellVol),
     });
   }
-});
+  },
+);
 
 // ============================================================
 // TokenRegistered — link token IDs to conditions
 // ============================================================
 
-Exchange.TokenRegistered.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "Exchange", event: "TokenRegistered" },
+  async ({ event, context }) => {
   const token0Str = event.params.token0.toString();
   const token1Str = event.params.token1.toString();
   const condition = event.params.conditionId;
@@ -249,4 +260,5 @@ Exchange.TokenRegistered.handler(async ({ event, context }) => {
       endDate,
     });
   }
-});
+  },
+);

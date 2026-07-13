@@ -122,7 +122,7 @@ export function parseOrderFilled(params: {
  * Compute FPMM price from outcome token amounts.
  * price[i] = amounts[1-i] * COLLATERAL_SCALE / (amounts[0] + amounts[1])
  */
-export function computeFpmmPrice(amounts: bigint[], outcomeIndex: number): bigint {
+export function computeFpmmPrice(amounts: readonly bigint[], outcomeIndex: number): bigint {
   const total = amounts[0]! + amounts[1]!;
   if (total === 0n) return 0n;
   return (amounts[1 - outcomeIndex]! * COLLATERAL_SCALE) / total;
@@ -139,8 +139,12 @@ export function computeNegRiskYesPrice(
 ): bigint {
   const yesCount = questionCount - noCount;
   if (yesCount === 0) return 0n;
-  return (
+  const price = (
     noPrice * BigInt(noCount) -
     COLLATERAL_SCALE * BigInt(noCount - 1)
   ) / BigInt(yesCount);
+  // Low NO avg prices can push the derived YES price below zero
+  // (noPrice*noCount < scale*(noCount-1)); a negative buy price would
+  // corrupt the position's avgPrice, so clamp at free.
+  return price < 0n ? 0n : price;
 }

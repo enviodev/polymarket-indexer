@@ -1,9 +1,32 @@
-import { CTFExchangeV2 } from "generated";
+import { indexer } from "envio";
 import { getEventKey } from "../../utils/negRisk.js";
 import { getMarketMetadata } from "../../effects/marketMetadata.js";
+import { COLLATERAL_SCALE, TradeType } from "../../utils/constants.js";
+import {
+  updateUserPositionWithBuy,
+  updateUserPositionWithSell,
+} from "../../utils/pnl.js";
 
 const ZERO_BYTES32 =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+// V2 OrderFilled carries an explicit side + tokenId (unlike V1's asset IDs).
+// BUY: maker pays collateral (makerAmountFilled) for tokens (takerAmountFilled).
+// SELL: maker gives tokens (makerAmountFilled) for collateral (takerAmountFilled).
+// V2 tokenIds are the same USDC-collateral CTF position IDs as V1, so
+// UserPosition PnL from V1 and V2 fills of the same token unify naturally.
+function parseV2OrderFilled(params: {
+  side: bigint;
+  makerAmountFilled: bigint;
+  takerAmountFilled: bigint;
+}): { isBuy: boolean; baseAmount: bigint; quoteAmount: bigint } {
+  const isBuy = Number(params.side) === TradeType.BUY;
+  return {
+    isBuy,
+    baseAmount: isBuy ? params.takerAmountFilled : params.makerAmountFilled,
+    quoteAmount: isBuy ? params.makerAmountFilled : params.takerAmountFilled,
+  };
+}
 
 const getOrInitStats = async (context: any, id: string) =>
   context.V2ExchangeStats.getOrCreate({
@@ -48,101 +71,149 @@ const ensureMarket = async (context: any, tokenId: bigint) => {
 
 // ── Trading ────────────────────────────────────────────────────────
 
-CTFExchangeV2.OrderFilled.handler(async ({ event, context }) => {
-  const stats = await getOrInitStats(context, event.srcAddress);
-  const marketId = await ensureMarket(context, event.params.tokenId);
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "OrderFilled" },
+  async ({ event, context }) => {
+    const stats = await getOrInitStats(context, event.srcAddress);
+    const marketId = await ensureMarket(context, event.params.tokenId);
 
-  context.V2OrderFill.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
-    orderHash: event.params.orderHash,
-    maker: event.params.maker,
-    taker: event.params.taker,
-    side: Number(event.params.side),
-    tokenId: event.params.tokenId,
-    market_id: marketId,
-    makerAmountFilled: event.params.makerAmountFilled,
-    takerAmountFilled: event.params.takerAmountFilled,
-    fee: event.params.fee,
-    builder: event.params.builder,
-    metadata: event.params.metadata,
-    exchange: event.srcAddress,
-    timestamp: event.block.timestamp,
-    blockNumber: event.block.number,
-    transactionHash: event.transaction.hash,
-    txFrom: event.transaction.from ?? "",
-  });
+    context.V2OrderFill.set({
+      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      orderHash: event.params.orderHash,
+      maker: event.params.maker,
+      taker: event.params.taker,
+      side: Number(event.params.side),
+      tokenId: event.params.tokenId,
+      market_id: marketId,
+      makerAmountFilled: event.params.makerAmountFilled,
+      takerAmountFilled: event.params.takerAmountFilled,
+      fee: event.params.fee,
+      builder: event.params.builder,
+      metadata: event.params.metadata,
+      exchange: event.srcAddress,
+      timestamp: event.block.timestamp,
+      blockNumber: event.block.number,
+      transactionHash: event.transaction.hash,
+      txFrom: event.transaction.from ?? "",
+    });
 
-  const hasBuilder = event.params.builder !== ZERO_BYTES32;
+    const hasBuilder = event.params.builder !== ZERO_BYTES32;
+    const { isBuy, baseAmount, quoteAmount } = parseV2OrderFilled(event.params);
 
-  context.V2ExchangeStats.set({
-    ...stats,
-    totalOrdersFilled: stats.totalOrdersFilled + 1n,
-    totalVolume: stats.totalVolume + event.params.makerAmountFilled,
-    totalFees: stats.totalFees + event.params.fee,
-    totalBuilderFills: stats.totalBuilderFills + (hasBuilder ? 1n : 0n),
-  });
-});
+    context.V2ExchangeStats.set({
+      ...stats,
+      totalOrdersFilled: stats.totalOrdersFilled + 1n,
+      // Volume in collateral units for both sides (makerAmountFilled is
+      // outcome tokens on SELL fills, so use the side-aware quote amount)
+      totalVolume: stats.totalVolume + quoteAmount,
+      totalFees: stats.totalFees + event.params.fee,
+      totalBuilderFills: stats.totalBuilderFills + (hasBuilder ? 1n : 0n),
+    });
 
-CTFExchangeV2.OrdersMatched.handler(async ({ event, context }) => {
-  const stats = await getOrInitStats(context, event.srcAddress);
-  const marketId = await ensureMarket(context, event.params.tokenId);
+    // PnL: same UserPosition accounting as the V1 Exchange handler
+    const price =
+      baseAmount > 0n ? (quoteAmount * COLLATERAL_SCALE) / baseAmount : 0n;
+    if (isBuy) {
+      await updateUserPositionWithBuy(
+        context,
+        event.params.maker,
+        event.params.tokenId,
+        price,
+        baseAmount,
+      );
+    } else {
+      await updateUserPositionWithSell(
+        context,
+        event.params.maker,
+        event.params.tokenId,
+        price,
+        baseAmount,
+      );
+    }
+  },
+);
 
-  context.V2OrderMatch.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
-    takerOrderHash: event.params.takerOrderHash,
-    takerOrderMaker: event.params.takerOrderMaker,
-    side: Number(event.params.side),
-    tokenId: event.params.tokenId,
-    market_id: marketId,
-    makerAmountFilled: event.params.makerAmountFilled,
-    takerAmountFilled: event.params.takerAmountFilled,
-    exchange: event.srcAddress,
-    timestamp: event.block.timestamp,
-    blockNumber: event.block.number,
-    transactionHash: event.transaction.hash,
-  });
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "OrdersMatched" },
+  async ({ event, context }) => {
+    const stats = await getOrInitStats(context, event.srcAddress);
+    const marketId = await ensureMarket(context, event.params.tokenId);
 
-  context.V2ExchangeStats.set({
-    ...stats,
-    totalOrdersMatched: stats.totalOrdersMatched + 1n,
-  });
-});
+    context.V2OrderMatch.set({
+      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      takerOrderHash: event.params.takerOrderHash,
+      takerOrderMaker: event.params.takerOrderMaker,
+      side: Number(event.params.side),
+      tokenId: event.params.tokenId,
+      market_id: marketId,
+      makerAmountFilled: event.params.makerAmountFilled,
+      takerAmountFilled: event.params.takerAmountFilled,
+      exchange: event.srcAddress,
+      timestamp: event.block.timestamp,
+      blockNumber: event.block.number,
+      transactionHash: event.transaction.hash,
+    });
 
-CTFExchangeV2.FeeCharged.handler(async ({ event, context }) => {
-  context.V2FeeEvent.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
-    receiver: event.params.receiver,
-    amount: event.params.amount,
-    timestamp: event.block.timestamp,
-    blockNumber: event.block.number,
-    transactionHash: event.transaction.hash,
-  });
-});
+    context.V2ExchangeStats.set({
+      ...stats,
+      totalOrdersMatched: stats.totalOrdersMatched + 1n,
+    });
+  },
+);
+
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "FeeCharged" },
+  async ({ event, context }) => {
+    context.V2FeeEvent.set({
+      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      receiver: event.params.receiver,
+      amount: event.params.amount,
+      timestamp: event.block.timestamp,
+      blockNumber: event.block.number,
+      transactionHash: event.transaction.hash,
+    });
+  },
+);
 
 // ── Pause & Admin (light tracking) ─────────────────────────────────
 
-CTFExchangeV2.UserPaused.handler(async ({ event, context }) => {
-  context.log.info(
-    `User ${event.params.user} paused until block ${event.params.effectivePauseBlock}`,
-  );
-});
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "UserPaused" },
+  async ({ event, context }) => {
+    context.log.info(
+      `User ${event.params.user} paused until block ${event.params.effectivePauseBlock}`,
+    );
+  },
+);
 
-CTFExchangeV2.TradingPaused.handler(async ({ event, context }) => {
-  context.log.info(`Trading paused by ${event.params.pauser}`);
-});
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "TradingPaused" },
+  async ({ event, context }) => {
+    context.log.info(`Trading paused by ${event.params.pauser}`);
+  },
+);
 
-CTFExchangeV2.TradingUnpaused.handler(async ({ event, context }) => {
-  context.log.info(`Trading unpaused by ${event.params.pauser}`);
-});
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "TradingUnpaused" },
+  async ({ event, context }) => {
+    context.log.info(`Trading unpaused by ${event.params.pauser}`);
+  },
+);
 
-CTFExchangeV2.NewAdmin.handler(async ({ event, context }) => {
-  context.log.info(
-    `New admin ${event.params.newAdminAddress} added by ${event.params.admin}`,
-  );
-});
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "NewAdmin" },
+  async ({ event, context }) => {
+    context.log.info(
+      `New admin ${event.params.newAdminAddress} added by ${event.params.admin}`,
+    );
+  },
+);
 
-CTFExchangeV2.NewOperator.handler(async ({ event, context }) => {
-  context.log.info(
-    `New operator ${event.params.newOperatorAddress} added by ${event.params.admin}`,
-  );
-});
+indexer.onEvent(
+  { contract: "CTFExchangeV2", event: "NewOperator" },
+  async ({ event, context }) => {
+    context.log.info(
+      `New operator ${event.params.newOperatorAddress} added by ${event.params.admin}`,
+    );
+  },
+);

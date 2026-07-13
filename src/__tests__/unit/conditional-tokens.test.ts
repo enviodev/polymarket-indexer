@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../handlers/ConditionalTokens.js";
 
 const ORACLE_REGULAR = "0x0000000000000000000000000000000000000001";

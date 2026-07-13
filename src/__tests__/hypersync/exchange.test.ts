@@ -16,7 +16,7 @@ describe("HyperSync - Exchange", () => {
   // Existing: overflow regression test
   // ============================================================
   it("should accumulate large volumes without overflow (HyperSync)", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -67,7 +67,7 @@ describe("HyperSync - Exchange", () => {
   // Existing: Exchange first block
   // ============================================================
   it("should index TokenRegistered + OrderFilled + OrdersMatched from block 33605403", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -102,7 +102,7 @@ describe("HyperSync - Exchange", () => {
   // Existing: dense trading block with both Exchange addresses
   // ============================================================
   it("should handle multiple OrderFilled events across both Exchange addresses", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -166,7 +166,7 @@ describe("HyperSync - Exchange", () => {
   // New: NegRiskExchange OrderFilled
   // ============================================================
   it("should process NegRiskExchange OrderFilled events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -201,7 +201,7 @@ describe("HyperSync - Exchange", () => {
   // New: UserPosition PnL from real trades
   // ============================================================
   it("should create UserPositions with valid avgPrice from real trades", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

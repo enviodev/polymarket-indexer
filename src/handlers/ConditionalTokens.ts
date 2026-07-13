@@ -1,4 +1,4 @@
-import { ConditionalTokens } from "generated";
+import { indexer } from "envio";
 import {
   USDC,
   NEG_RISK_ADAPTER,
@@ -6,6 +6,10 @@ import {
   NEG_RISK_EXCHANGE,
   COLLATERAL_SCALE,
   FIFTY_CENTS,
+  V2_EXCHANGES,
+  CTF_COLLATERAL_ADAPTER,
+  NEG_RISK_CTF_COLLATERAL_ADAPTER,
+  NEG_RISK_WRAPPED_COLLATERAL,
 } from "../utils/constants.js";
 import { computePositionId } from "../utils/ctf.js";
 import { getEventKey } from "../utils/negRisk.js";
@@ -16,16 +20,33 @@ import {
 } from "../utils/pnl.js";
 
 const USDC_LOWER = USDC.toLowerCase();
+// Collaterals whose CTF positions we track for PnL. Splitting a shared
+// condition with any other ERC20 mints different position tokenIds, so
+// booking those against Condition.positionIds would be phantom PnL.
+const PNL_COLLATERALS = new Set([
+  USDC_LOWER,
+  NEG_RISK_WRAPPED_COLLATERAL.toLowerCase(),
+]);
 const NEG_RISK_ADAPTER_LOWER = NEG_RISK_ADAPTER.toLowerCase();
 const EXCHANGE_LOWER = EXCHANGE.toLowerCase();
 const NEG_RISK_EXCHANGE_LOWER = NEG_RISK_EXCHANGE.toLowerCase();
 const NEG_RISK_WRAPPED = "0x3A3BD7bb9528E159577F7C2e685CC81A765002E2" as `0x${string}`;
+
+// V2 contracts that operate on the CTF on behalf of users: the
+// CtfCollateralAdapter is the stakeholder for V2 exchange mint/merge
+// crossings (user-level fills arrive via CTFExchangeV2 OrderFilled).
+const V2_INTERMEDIARIES = [
+  CTF_COLLATERAL_ADAPTER,
+  NEG_RISK_CTF_COLLATERAL_ADAPTER,
+  ...V2_EXCHANGES,
+].map((a) => a.toLowerCase());
 
 // Addresses to skip for activity tracking (handled elsewhere)
 const SKIP_ACTIVITY = new Set([
   NEG_RISK_ADAPTER_LOWER,
   EXCHANGE_LOWER,
   NEG_RISK_EXCHANGE_LOWER,
+  ...V2_INTERMEDIARIES,
 ]);
 
 // Skip PnL for these (handled in their own handlers)
@@ -33,6 +54,7 @@ const SKIP_PNL = new Set([
   NEG_RISK_ADAPTER_LOWER,
   EXCHANGE_LOWER,
   NEG_RISK_EXCHANGE_LOWER,
+  ...V2_INTERMEDIARIES,
 ]);
 
 // ============================================================
@@ -93,7 +115,9 @@ function getPositionIds(
 // ConditionPreparation — create Condition + Position entities
 // ============================================================
 
-ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "ConditionalTokens", event: "ConditionPreparation" },
+  async ({ event, context }) => {
   // Only handle binary conditions (2 outcomes)
   if (event.params.outcomeSlotCount !== 2n) return;
 
@@ -129,13 +153,16 @@ ConditionalTokens.ConditionPreparation.handler(async ({ event, context }) => {
       });
     }
   }
-});
+  },
+);
 
 // ============================================================
 // ConditionResolution — store payout numerators/denominator (PnL)
 // ============================================================
 
-ConditionalTokens.ConditionResolution.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "ConditionalTokens", event: "ConditionResolution" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const condition = await context.Condition.get(conditionId);
   if (!condition) return;
@@ -151,13 +178,16 @@ ConditionalTokens.ConditionResolution.handler(async ({ event, context }) => {
     payoutNumerators,
     payoutDenominator,
   });
-});
+  },
+);
 
 // ============================================================
 // PositionSplit — Activity + OI + PnL
 // ============================================================
 
-ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "ConditionalTokens", event: "PositionSplit" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const stakeholder = event.params.stakeholder;
   const stakeholderLower = stakeholder.toLowerCase();
@@ -186,7 +216,10 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
   }
 
   // PnL: Split = buying both outcomes at 50 cents each (skip NRA/Exchange)
-  if (!SKIP_PNL.has(stakeholderLower)) {
+  if (
+    !SKIP_PNL.has(stakeholderLower) &&
+    PNL_COLLATERALS.has(collateralToken.toLowerCase())
+  ) {
     const positionIds = condition.positionIds;
     for (let i = 0; i < 2; i++) {
       await updateUserPositionWithBuy(
@@ -198,13 +231,16 @@ ConditionalTokens.PositionSplit.handler(async ({ event, context }) => {
       );
     }
   }
-});
+  },
+);
 
 // ============================================================
 // PositionsMerge — Activity + OI + PnL
 // ============================================================
 
-ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "ConditionalTokens", event: "PositionsMerge" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const stakeholder = event.params.stakeholder;
   const stakeholderLower = stakeholder.toLowerCase();
@@ -233,7 +269,10 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
   }
 
   // PnL: Merge = selling both outcomes at 50 cents each (skip NRA/Exchange)
-  if (!SKIP_PNL.has(stakeholderLower)) {
+  if (
+    !SKIP_PNL.has(stakeholderLower) &&
+    PNL_COLLATERALS.has(collateralToken.toLowerCase())
+  ) {
     const positionIds = condition.positionIds;
     for (let i = 0; i < 2; i++) {
       await updateUserPositionWithSell(
@@ -245,13 +284,16 @@ ConditionalTokens.PositionsMerge.handler(async ({ event, context }) => {
       );
     }
   }
-});
+  },
+);
 
 // ============================================================
 // PayoutRedemption — Activity + OI + PnL
 // ============================================================
 
-ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "ConditionalTokens", event: "PayoutRedemption" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const redeemer = event.params.redeemer;
   const collateralToken = event.params.collateralToken;
@@ -259,8 +301,12 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
   const condition = await context.Condition.get(conditionId);
   if (!condition) return;
 
-  // Activity: Create Redemption (skip NegRiskAdapter)
-  if (redeemer.toLowerCase() !== NEG_RISK_ADAPTER_LOWER) {
+  const redeemerLower = redeemer.toLowerCase();
+
+  // Activity: Create Redemption (skip NegRiskAdapter + V2 intermediaries —
+  // V2 adapter redemptions are attributed to users via the ERC1155
+  // surrender transfer, see the TransferSingle/TransferBatch handlers)
+  if (!SKIP_ACTIVITY.has(redeemerLower)) {
     context.Redemption.set({
       id: getEventKey(event.chainId, event.block.number, event.logIndex),
       timestamp: BigInt(event.block.timestamp),
@@ -276,8 +322,12 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
     await updateOpenInterest(context, conditionId, -event.params.payout);
   }
 
-  // PnL: Redeem = sell at payout price (skip NRA — handled there)
-  if (redeemer.toLowerCase() !== NEG_RISK_ADAPTER_LOWER) {
+  // PnL: Redeem = sell at payout price (skip NRA + V2 intermediaries —
+  // handled in their own attribution paths)
+  if (
+    !SKIP_PNL.has(redeemerLower) &&
+    PNL_COLLATERALS.has(collateralToken.toLowerCase())
+  ) {
     if (condition.payoutDenominator === 0n) return;
 
     const payoutNumerators = condition.payoutNumerators;
@@ -302,4 +352,5 @@ ConditionalTokens.PayoutRedemption.handler(async ({ event, context }) => {
       );
     }
   }
-});
+  },
+);

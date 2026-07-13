@@ -1,4 +1,4 @@
-import { keccak256, encodePacked, concat } from "viem";
+import { keccak256, encodePacked, concat, getAddress } from "viem";
 
 export function computeCreate2Address(
   deployer: `0x${string}`,
@@ -8,8 +8,10 @@ export function computeCreate2Address(
   const hash = keccak256(
     concat(["0xff" as `0x${string}`, deployer, salt, initCodeHash]),
   );
-  // Take last 20 bytes as address
-  return `0x${hash.slice(26)}` as `0x${string}`;
+  // Take last 20 bytes as address, EIP-55 checksummed: envio delivers event
+  // params checksummed (default address_format), and Wallet entity ids must
+  // match exactly for the USDC Transfer balance lookups to hit.
+  return getAddress(`0x${hash.slice(26)}`);
 }
 
 export function generateProxyWalletBytecode(

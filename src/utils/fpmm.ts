@@ -50,7 +50,11 @@ export function calculatePrices(outcomeTokenAmounts: bigint[]): BigNumber[] {
     product *= outcomeTokenAmounts[i]!;
   }
 
-  if (totalBalance === 0n) return prices;
+  // A single zero amount (drained side of a degenerate pool) would make the
+  // per-outcome division below throw — treat it like the all-zero case.
+  if (totalBalance === 0n || outcomeTokenAmounts.some((a) => a === 0n)) {
+    return prices;
+  }
 
   let denominator = 0n;
   for (let i = 0; i < len; i++) {
@@ -73,7 +77,7 @@ export function scaleBigInt(value: bigint): BigNumber {
   return new BigNumber(value.toString()).dividedBy(COLLATERAL_SCALE_DEC);
 }
 
-export function maxBigInt(arr: bigint[]): bigint {
+export function maxBigInt(arr: readonly bigint[]): bigint {
   let max = 0n;
   for (const v of arr) {
     if (v > max) max = v;

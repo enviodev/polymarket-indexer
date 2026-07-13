@@ -1,4 +1,4 @@
-import { NegRiskAdapter } from "generated";
+import { indexer } from "envio";
 import {
   NEG_RISK_ADAPTER,
   NEG_RISK_EXCHANGE,
@@ -81,33 +81,41 @@ async function updateOpenInterest(
 // MarketPrepared — create NegRiskEvent
 // ============================================================
 
-NegRiskAdapter.MarketPrepared.handler(async ({ event, context }) => {
-  context.NegRiskEvent.set({
-    id: event.params.marketId,
-    feeBps: event.params.feeBips,
-    questionCount: 0n,
-  });
-});
+indexer.onEvent(
+  { contract: "NegRiskAdapter", event: "MarketPrepared" },
+  async ({ event, context }) => {
+    context.NegRiskEvent.set({
+      id: event.params.marketId,
+      feeBps: event.params.feeBips,
+      questionCount: 0n,
+    });
+  },
+);
 
 // ============================================================
 // QuestionPrepared — increment NegRiskEvent questionCount
 // ============================================================
 
-NegRiskAdapter.QuestionPrepared.handler(async ({ event, context }) => {
-  const negRiskEvent = await context.NegRiskEvent.get(event.params.marketId);
-  if (!negRiskEvent) return;
+indexer.onEvent(
+  { contract: "NegRiskAdapter", event: "QuestionPrepared" },
+  async ({ event, context }) => {
+    const negRiskEvent = await context.NegRiskEvent.get(event.params.marketId);
+    if (!negRiskEvent) return;
 
-  context.NegRiskEvent.set({
-    ...negRiskEvent,
-    questionCount: negRiskEvent.questionCount + 1n,
-  });
-});
+    context.NegRiskEvent.set({
+      ...negRiskEvent,
+      questionCount: negRiskEvent.questionCount + 1n,
+    });
+  },
+);
 
 // ============================================================
 // PositionSplit — Activity + OI + PnL
 // ============================================================
 
-NegRiskAdapter.PositionSplit.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "NegRiskAdapter", event: "PositionSplit" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const stakeholder = event.params.stakeholder;
   const skipExchange = stakeholder.toLowerCase() === NEG_RISK_EXCHANGE_LOWER;
@@ -142,13 +150,16 @@ NegRiskAdapter.PositionSplit.handler(async ({ event, context }) => {
       );
     }
   }
-});
+  },
+);
 
 // ============================================================
 // PositionsMerge — Activity + OI + PnL
 // ============================================================
 
-NegRiskAdapter.PositionsMerge.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "NegRiskAdapter", event: "PositionsMerge" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
   const stakeholder = event.params.stakeholder;
   const skipExchange = stakeholder.toLowerCase() === NEG_RISK_EXCHANGE_LOWER;
@@ -183,13 +194,16 @@ NegRiskAdapter.PositionsMerge.handler(async ({ event, context }) => {
       );
     }
   }
-});
+  },
+);
 
 // ============================================================
 // PayoutRedemption — Activity + OI + PnL
 // ============================================================
 
-NegRiskAdapter.PayoutRedemption.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "NegRiskAdapter", event: "PayoutRedemption" },
+  async ({ event, context }) => {
   const conditionId = event.params.conditionId;
 
   // OI: Check condition exists
@@ -227,13 +241,16 @@ NegRiskAdapter.PayoutRedemption.handler(async ({ event, context }) => {
       );
     }
   }
-});
+  },
+);
 
 // ============================================================
 // PositionsConverted — Activity + OI + PnL
 // ============================================================
 
-NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "NegRiskAdapter", event: "PositionsConverted" },
+  async ({ event, context }) => {
   const marketId = event.params.marketId;
   const negRiskEvent = await context.NegRiskEvent.get(marketId);
   if (!negRiskEvent) return;
@@ -351,4 +368,5 @@ NegRiskAdapter.PositionsConverted.handler(async ({ event, context }) => {
       }
     }
   }
-});
+  },
+);
