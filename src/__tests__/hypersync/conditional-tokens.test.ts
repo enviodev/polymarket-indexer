@@ -14,7 +14,7 @@ describe("HyperSync - ConditionalTokens", () => {
   // Existing: ConditionPreparation + FPMM from factory
   // ============================================================
   it("should create Condition from ConditionPreparation and FPMM from factory", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -83,7 +83,7 @@ describe("HyperSync - ConditionalTokens", () => {
   // Existing: Split, OI, and Redemption
   // ============================================================
   it("should create Split, update OI, and create Redemption from real events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -122,7 +122,7 @@ describe("HyperSync - ConditionalTokens", () => {
   // New: ConditionResolution
   // ============================================================
   it("should process ConditionResolution events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -157,7 +157,7 @@ describe("HyperSync - ConditionalTokens", () => {
   // New: PositionsMerge real data
   // ============================================================
   it("should process PositionsMerge events from real data", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -190,7 +190,7 @@ describe("HyperSync - ConditionalTokens", () => {
   // New: Dense multi-split block OI accumulation
   // ============================================================
   it("should accumulate GlobalOpenInterest from dense split blocks", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 // Register ConditionalTokens + NegRiskAdapter + Exchange — any of these can drive PnL
 import "../../handlers/ConditionalTokens.js";
 import "../../handlers/NegRiskAdapter.js";

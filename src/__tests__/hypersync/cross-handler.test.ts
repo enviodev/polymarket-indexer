@@ -14,7 +14,7 @@ describe("HyperSync - Cross-handler integration", () => {
   // Dense multi-event block
   // ============================================================
   it("should process dense multi-event block with Exchange + ConditionalTokens", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -71,7 +71,7 @@ describe("HyperSync - Cross-handler integration", () => {
   // ConditionalTokens + Exchange interplay
   // ============================================================
   it("should process ConditionalTokens + Exchange interplay", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -117,7 +117,7 @@ describe("HyperSync - Cross-handler integration", () => {
   // NegRisk + Exchange interplay
   // ============================================================
   it("should process NegRisk + Exchange interplay", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -177,7 +177,7 @@ describe("HyperSync - Cross-handler integration", () => {
   // Full PnL lifecycle
   // ============================================================
   it("should track full PnL lifecycle with UserPosition", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

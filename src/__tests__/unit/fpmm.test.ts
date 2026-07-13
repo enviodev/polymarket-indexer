@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import BigNumber from "bignumber.js";
 import "../../handlers/FixedProductMarketMaker.js";
 
@@ -153,5 +153,58 @@ describe("FixedProductMarketMaker.FPMMFundingAdded", () => {
     const additions = await indexer.FpmmFundingAddition.getAll();
     expect(additions.length).toBe(1);
     expect(additions[0]!.sharesMinted).toBe(1_000_000n);
+  });
+});
+
+describe("FixedProductMarketMaker LP PnL round trip", () => {
+  it("realizes zero PnL on a break-even add -> remove round trip", async () => {
+    const indexer = createTestIndexer();
+    seedFpmm(indexer);
+
+    await indexer.process({
+      chains: {
+        137: {
+          simulate: [
+            {
+              contract: "FixedProductMarketMaker",
+              srcAddress: FPMM_ADDR,
+              event: "FPMMFundingAdded",
+              params: {
+                funder: BUYER,
+                amountsAdded: [100_000_000n, 100_000_000n],
+                sharesMinted: 100_000_000n,
+              },
+            },
+            {
+              contract: "FixedProductMarketMaker",
+              srcAddress: FPMM_ADDR,
+              event: "FPMMFundingRemoved",
+              params: {
+                funder: BUYER,
+                amountsRemoved: [100_000_000n, 100_000_000n],
+                collateralRemovedFromFeePool: 0n,
+                sharesBurnt: 100_000_000n,
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    // LP share position: bought 100M shares @ 1.00, sold @ 1.00 (tokens
+    // received are booked separately as 0.50 buys). Break-even => 0 PnL.
+    const lpPosition = await indexer.UserPosition.get(
+      `${BUYER}-${BigInt(FPMM_ADDR).toString()}`,
+    );
+    expect(lpPosition).toBeDefined();
+    expect(lpPosition!.amount).toBe(0n);
+    expect(lpPosition!.realizedPnl).toBe(0n);
+
+    // The outcome tokens received on removal are held at 0.50 basis
+    for (const positionId of [100n, 101n]) {
+      const pos = await indexer.UserPosition.get(`${BUYER}-${positionId}`);
+      expect(pos!.amount).toBe(100_000_000n);
+      expect(pos!.avgPrice).toBe(500_000n);
+    }
   });
 });

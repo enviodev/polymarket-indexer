@@ -21,6 +21,19 @@ export const PROXY_WALLET_FACTORY =
 export const PROXY_WALLET_IMPLEMENTATION =
   "0x44e999d5c2F66Ef0861317f9A4805AC2e90aEB4f";
 
+// Polymarket V2 (pUSD-era) contracts. The V2 exchanges settle in pUSD but the
+// outcome tokens are the same USDC-collateral CTF positions as V1 — position
+// IDs derived from (USDC, conditionId) match V2 OrderFilled tokenIds exactly.
+export const V2_EXCHANGES = [
+  "0xe111180000d2663c0091e4f400237545b87b996b",
+  "0xe2222d279d744050d28e00520010520000310f59",
+  "0xe2222d002000ba0053cef3375333610f64600036",
+];
+export const CTF_COLLATERAL_ADAPTER =
+  "0xada100874d00e3331d00f2007a9c336a65009718";
+export const NEG_RISK_CTF_COLLATERAL_ADAPTER =
+  "0xada200001000ef00d07553cee7006808f895c6f1";
+
 export const COLLATERAL_SCALE = 10n ** 6n; // USDC 6 decimals
 export const COLLATERAL_SCALE_DEC = 1_000_000;
 export const FIFTY_CENTS = COLLATERAL_SCALE / 2n;

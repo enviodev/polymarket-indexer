@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../handlers/UmaSportsOracle.js";
 
 const GAME_ID =

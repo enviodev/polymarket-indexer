@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../../handlers/v2/CTFExchangeV2.js";
 
 const FIRST_V2_EXCHANGE = "0xe111180000d2663c0091e4f400237545b87b996b";

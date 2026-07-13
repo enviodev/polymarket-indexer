@@ -57,9 +57,11 @@ describe("calculatePrices", () => {
     expect(prices[1]!.isEqualTo(0)).toBe(true);
   });
 
-  it("throws on [100n, 0n] due to division by zero in product/amounts[i]", () => {
-    // product = 100 * 0 = 0, totalBalance = 100, but product/amounts[1] => 0n/0n throws
-    expect(() => calculatePrices([100n, 0n])).toThrow();
+  it("returns [0, 0] when one side is drained (no division-by-zero throw)", () => {
+    // product = 100 * 0 = 0; product/amounts[1] would be 0n/0n — guarded
+    const prices = calculatePrices([100n, 0n]);
+    expect(prices[0]!.isEqualTo(0)).toBe(true);
+    expect(prices[1]!.isEqualTo(0)).toBe(true);
   });
 });
 

@@ -1,4 +1,4 @@
-import { RelayHub, SafeProxyFactory, USDC } from "generated";
+import { indexer } from "envio";
 import {
   PROXY_WALLET_FACTORY,
   PROXY_WALLET_IMPLEMENTATION,
@@ -11,7 +11,9 @@ const GLOBAL_USDC_ID = "global";
 // RelayHub — proxy wallet creation
 // ============================================================
 
-RelayHub.TransactionRelayed.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "RelayHub", event: "TransactionRelayed" },
+  async ({ event, context }) => {
   const from = event.params.from;
   const to = event.params.to;
 
@@ -37,13 +39,16 @@ RelayHub.TransactionRelayed.handler(async ({ event, context }) => {
       createdAt: BigInt(event.block.timestamp),
     });
   }
-});
+  },
+);
 
 // ============================================================
 // SafeProxyFactory — safe wallet creation
 // ============================================================
 
-SafeProxyFactory.ProxyCreation.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "SafeProxyFactory", event: "ProxyCreation" },
+  async ({ event, context }) => {
   const proxyAddress = event.params.proxy;
 
   const existing = await context.Wallet.get(proxyAddress);
@@ -57,13 +62,16 @@ SafeProxyFactory.ProxyCreation.handler(async ({ event, context }) => {
       createdAt: BigInt(event.block.timestamp),
     });
   }
-});
+  },
+);
 
 // ============================================================
 // USDC Transfer — wallet balance tracking
 // ============================================================
 
-USDC.Transfer.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "USDC", event: "Transfer" },
+  async ({ event, context }) => {
   const from = event.params.from;
   const to = event.params.to;
   const amount = event.params.amount;
@@ -116,4 +124,5 @@ USDC.Transfer.handler(async ({ event, context }) => {
       });
     }
   }
-});
+  },
+);

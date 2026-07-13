@@ -14,7 +14,7 @@ describe("HyperSync - UmaSportsOracle", () => {
   // Existing: Game and Market creation
   // ============================================================
   it("should create Game and Market entities from real events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -80,7 +80,7 @@ describe("HyperSync - UmaSportsOracle", () => {
   // New: Game lifecycle (Created -> Settled)
   // ============================================================
   it("should process Game lifecycle through settlement", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -126,7 +126,7 @@ describe("HyperSync - UmaSportsOracle", () => {
   // New: Market lifecycle (Created -> Resolved)
   // ============================================================
   it("should process Market lifecycle through resolution", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -170,7 +170,7 @@ describe("HyperSync - UmaSportsOracle", () => {
   // New: GameCanceled
   // ============================================================
   it("should process GameCanceled events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({
@@ -209,7 +209,7 @@ describe("HyperSync - UmaSportsOracle", () => {
   // New: GamePaused
   // ============================================================
   it("should process GamePaused events", async () => {
-    const { createTestIndexer } = await import("generated");
+    const { createTestIndexer } = await import("envio");
     const indexer = createTestIndexer();
 
     const result = await indexer.process({

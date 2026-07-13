@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../handlers/FeeModule.js";
 
 const FEE_MODULE = "0xe3f18acc55091e2c48d883fc8c8413319d4ab7b0";

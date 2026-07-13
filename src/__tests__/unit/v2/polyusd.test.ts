@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../../handlers/v2/PolyUSD.js";
 
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";

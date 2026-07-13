@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createTestIndexer } from "generated";
+import { createTestIndexer } from "envio";
 import "../../handlers/Wallet.js";
 
 // The proxy wallet factory — must match the PROXY_WALLET_FACTORY constant in src/utils/constants.ts
@@ -176,5 +176,62 @@ describe("USDC.Transfer (balance tracking)", () => {
     });
 
     expect((await indexer.Wallet.getAll()).length).toBe(0);
+  });
+});
+
+describe("Proxy wallet USDC balance tracking (address casing)", () => {
+  it("updates a proxy wallet's balance from a checksummed USDC Transfer", async () => {
+    const indexer = createTestIndexer();
+    const { computeProxyWalletAddress } = await import("../../utils/wallet.js");
+    const { getAddress } = await import("viem");
+    const {
+      PROXY_WALLET_FACTORY: FACTORY,
+      PROXY_WALLET_IMPLEMENTATION: IMPL,
+    } = await import("../../utils/constants.js");
+
+    const walletAddress = computeProxyWalletAddress(
+      ALICE as `0x${string}`,
+      FACTORY as `0x${string}`,
+      IMPL as `0x${string}`,
+    );
+    // The computed id must be EIP-55 checksummed so that envio's
+    // checksummed event params match it on lookup
+    expect(walletAddress).toBe(getAddress(walletAddress));
+
+    await indexer.process({
+      chains: {
+        137: {
+          simulate: [
+            {
+              contract: "RelayHub",
+              event: "TransactionRelayed",
+              params: {
+                relay: BOB as `0x${string}`,
+                from: ALICE as `0x${string}`,
+                to: PROXY_WALLET_FACTORY as `0x${string}`,
+                selector: "0x12345678",
+                status: 0n,
+                charge: 0n,
+              },
+            },
+            {
+              contract: "USDC",
+              event: "Transfer",
+              params: {
+                // checksummed, as envio delivers event params
+                from: getAddress(BOB),
+                to: walletAddress,
+                amount: 7_000_000n,
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    const wallet = await indexer.Wallet.get(walletAddress);
+    expect(wallet).toBeDefined();
+    expect(wallet!.type).toBe("proxy");
+    expect(wallet!.balance).toBe(7_000_000n);
   });
 });
