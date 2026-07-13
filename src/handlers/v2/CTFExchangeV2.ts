@@ -41,32 +41,35 @@ const getOrInitStats = async (context: any, id: string) =>
 const ensureMarket = async (context: any, tokenId: bigint) => {
   const tokenIdStr = tokenId.toString();
   const existing = await context.V2Market.get(tokenIdStr);
-  if (existing) return tokenIdStr;
-
-  try {
-    const meta = await context.effect(getMarketMetadata, tokenIdStr);
-    if (meta) {
-      context.V2Market.set({
-        id: tokenIdStr,
-        question: meta.question,
-        slug: meta.slug,
-        outcomes: meta.outcomes,
-        outcomePrices: meta.outcomePrices,
-        description: meta.description,
-        image: meta.image,
-        startDate: meta.startDate,
-        endDate: meta.endDate,
-        conditionId: meta.conditionId,
-      });
-      return tokenIdStr;
+  if (!existing) {
+    try {
+      const meta = await context.effect(getMarketMetadata, tokenIdStr);
+      if (meta) {
+        context.V2Market.set({
+          id: tokenIdStr,
+          question: meta.question,
+          slug: meta.slug,
+          outcomes: meta.outcomes,
+          outcomePrices: meta.outcomePrices,
+          description: meta.description,
+          image: meta.image,
+          startDate: meta.startDate,
+          endDate: meta.endDate,
+          conditionId: meta.conditionId,
+        });
+      }
+    } catch (e) {
+      context.log.warn(
+        `Failed to fetch V2 market metadata for tokenId ${tokenIdStr}: ${e}`,
+      );
     }
-  } catch (e) {
-    context.log.warn(
-      `Failed to fetch V2 market metadata for tokenId ${tokenIdStr}: ${e}`,
-    );
   }
 
-  return undefined;
+  // V2Market.id IS the tokenId, so always link fills by tokenId: the join
+  // resolves as soon as metadata lands (a later fill of the same token
+  // retries the fetch). Returning undefined on fetch failure would leave
+  // the fill permanently unattributed under Gamma rate-limit pressure.
+  return tokenIdStr;
 };
 
 // ── Trading ────────────────────────────────────────────────────────
