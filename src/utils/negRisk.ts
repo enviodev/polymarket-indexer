@@ -62,7 +62,6 @@ export function indexSetContains(indexSet: bigint, index: number): boolean {
 }
 
 export function getEventKey(
-  chainId: number,
   blockNumber: number,
   logIndex: number,
 ): string {
