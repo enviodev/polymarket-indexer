@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
+import { SIM_BLOCK } from "../simBlock.js";
 // Register ConditionalTokens + NegRiskAdapter + Exchange — any of these can drive PnL
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/Exchange.js";
 
 const USER = "0x1111111111111111111111111111111111111111";
 const OTHER_USER = "0x2222222222222222222222222222222222222222";
@@ -30,6 +28,7 @@ describe("PnL via NegRiskAdapter.PositionsConverted", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskAdapter",
               event: "PositionsConverted",
               params: {
@@ -67,6 +66,7 @@ describe("PnL via ConditionalTokens.PositionSplit", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "PositionSplit",
               params: {
@@ -102,6 +102,7 @@ describe("PnL via Exchange.OrderFilled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Exchange",
               event: "OrderFilled",
               params: {

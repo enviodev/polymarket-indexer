@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
 // Import handlers to register them
-import "../../handlers/FeeModule.js";
-import "../../handlers/UmaSportsOracle.js";
-import "../../handlers/Wallet.js";
-import "../../handlers/Exchange.js";
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/FPMMFactory.js";
-import "../../handlers/FixedProductMarketMaker.js";
 
 describe("HyperSync - Wallet", () => {
   // ============================================================

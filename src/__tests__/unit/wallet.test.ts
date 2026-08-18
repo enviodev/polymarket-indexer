@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/Wallet.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 // The proxy wallet factory — must match the PROXY_WALLET_FACTORY constant in src/utils/constants.ts
 const PROXY_WALLET_FACTORY = "0xab45c5a4b0c941a2f231c04c3f49182e1a254052";
@@ -17,6 +17,7 @@ describe("SafeProxyFactory.ProxyCreation", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "SafeProxyFactory",
               event: "ProxyCreation",
               params: { proxy: ALICE, owner: BOB },
@@ -43,6 +44,7 @@ describe("RelayHub.TransactionRelayed (proxy wallet detection)", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "RelayHub",
               event: "TransactionRelayed",
               params: {
@@ -75,6 +77,7 @@ describe("RelayHub.TransactionRelayed (proxy wallet detection)", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "RelayHub",
               event: "TransactionRelayed",
               params: {
@@ -115,6 +118,7 @@ describe("USDC.Transfer (balance tracking)", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "USDC",
               event: "Transfer",
               params: { from: UNKNOWN, to: BOB, amount: 1_500n },
@@ -145,6 +149,7 @@ describe("USDC.Transfer (balance tracking)", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "USDC",
               event: "Transfer",
               params: { from: ALICE, to: UNKNOWN, amount: 1_500n },
@@ -166,6 +171,7 @@ describe("USDC.Transfer (balance tracking)", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "USDC",
               event: "Transfer",
               params: { from: UNKNOWN, to: ALICE, amount: 500n },
@@ -203,6 +209,7 @@ describe("Proxy wallet USDC balance tracking (address casing)", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "RelayHub",
               event: "TransactionRelayed",
               params: {

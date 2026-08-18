@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/v2/PolyUSD.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 const ALICE = "0x1111111111111111111111111111111111111111";
@@ -16,6 +16,7 @@ describe("PolyUSD.Transfer", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "PolyUSD",
               event: "Transfer",
               params: { from: ALICE, to: BOB, amount: 1_000_000n },
@@ -40,6 +41,7 @@ describe("PolyUSD.Transfer", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "PolyUSD",
               event: "Transfer",
               params: { from: ALICE, to: BOB, amount: 1_000_000n },
@@ -63,6 +65,7 @@ describe("PolyUSD.Transfer", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "PolyUSD",
               event: "Transfer",
               params: { from: ZERO_ADDR, to: BOB, amount: 5_000_000n },
@@ -87,6 +90,7 @@ describe("PolyUSD.Transfer", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "PolyUSD",
               event: "Transfer",
               params: { from: ZERO_ADDR, to: ALICE, amount: 5_000_000n },
@@ -115,6 +119,7 @@ describe("PolyUSD.Wrapped", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "PolyUSD",
               event: "Wrapped",
               params: {
@@ -150,6 +155,7 @@ describe("PolyUSD.Unwrapped", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "PolyUSD",
               event: "Unwrapped",
               params: {

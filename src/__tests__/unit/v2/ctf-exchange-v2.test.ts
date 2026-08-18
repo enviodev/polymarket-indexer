@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/v2/CTFExchangeV2.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 
 const FIRST_V2_EXCHANGE = "0xe111180000d2663c0091e4f400237545b87b996b";
 const MAKER = "0x1111111111111111111111111111111111111111";
@@ -24,6 +24,7 @@ describe("CTFExchangeV2.OrderFilled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CTFExchangeV2",
               srcAddress: FIRST_V2_EXCHANGE,
               event: "OrderFilled",
@@ -74,6 +75,7 @@ describe("CTFExchangeV2.OrderFilled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CTFExchangeV2",
               srcAddress: FIRST_V2_EXCHANGE,
               event: "OrderFilled",
@@ -110,6 +112,7 @@ describe("CTFExchangeV2.OrdersMatched", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CTFExchangeV2",
               srcAddress: FIRST_V2_EXCHANGE,
               event: "OrdersMatched",
@@ -146,6 +149,7 @@ describe("CTFExchangeV2.FeeCharged", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CTFExchangeV2",
               srcAddress: FIRST_V2_EXCHANGE,
               event: "FeeCharged",

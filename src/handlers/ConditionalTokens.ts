@@ -202,7 +202,7 @@ indexer.onEvent(
     if (!isFPMM) {
       context.Split.set({
         id: getEventKey(event.chainId, event.block.number, event.logIndex),
-        timestamp: BigInt(event.block.timestamp),
+        timestamp: event.block.timestamp,
         stakeholder,
         condition: conditionId,
         amount: event.params.amount,
@@ -255,7 +255,7 @@ indexer.onEvent(
     if (!isFPMM) {
       context.Merge.set({
         id: getEventKey(event.chainId, event.block.number, event.logIndex),
-        timestamp: BigInt(event.block.timestamp),
+        timestamp: event.block.timestamp,
         stakeholder,
         condition: conditionId,
         amount: event.params.amount,
@@ -309,7 +309,7 @@ indexer.onEvent(
   if (!SKIP_ACTIVITY.has(redeemerLower)) {
     context.Redemption.set({
       id: getEventKey(event.chainId, event.block.number, event.logIndex),
-      timestamp: BigInt(event.block.timestamp),
+      timestamp: event.block.timestamp,
       redeemer,
       condition: conditionId,
       indexSets: event.params.indexSets.map((v: bigint) => v),

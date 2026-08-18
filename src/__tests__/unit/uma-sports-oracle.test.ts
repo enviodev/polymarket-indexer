@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/UmaSportsOracle.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 const GAME_ID =
   "0x1000000000000000000000000000000000000000000000000000000000000001";
@@ -19,6 +19,7 @@ describe("UmaSportsOracle.GameCreated", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "UmaSportsOracle",
               event: "GameCreated",
               params: {
@@ -50,6 +51,7 @@ describe("UmaSportsOracle.GameSettled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "UmaSportsOracle",
               event: "GameCreated",
               params: {
@@ -85,6 +87,7 @@ describe("UmaSportsOracle.MarketCreated", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "UmaSportsOracle",
               event: "MarketCreated",
               params: {
@@ -118,6 +121,7 @@ describe("UmaSportsOracle.GameCanceled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "UmaSportsOracle",
               event: "GameCreated",
               params: {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/v2/CtfCollateralAdapter.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 
 const STANDARD_ADAPTER = "0xada100874d00e3331d00f2007a9c336a65009718";
 const NEG_RISK_ADAPTER = "0xada200001000ef00d07553cee7006808f895c6f1";
@@ -20,6 +20,7 @@ describe("CtfCollateralAdapter.PositionSplit", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CtfCollateralAdapter",
               srcAddress: STANDARD_ADAPTER,
               event: "PositionSplit",
@@ -56,7 +57,8 @@ describe("CtfCollateralAdapter.PositionSplit", () => {
         137: {
           simulate: [
             {
-              contract: "CtfCollateralAdapter",
+              block: SIM_BLOCK,
+              contract: "NegRiskCtfCollateralAdapter",
               srcAddress: NEG_RISK_ADAPTER,
               event: "PositionSplit",
               params: {
@@ -87,6 +89,7 @@ describe("CtfCollateralAdapter.PositionsMerge + PayoutRedemption", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CtfCollateralAdapter",
               srcAddress: STANDARD_ADAPTER,
               event: "PositionsMerge",
@@ -120,6 +123,7 @@ describe("CtfCollateralAdapter.PositionsMerge + PayoutRedemption", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CtfCollateralAdapter",
               srcAddress: STANDARD_ADAPTER,
               event: "PayoutRedemption",
@@ -155,6 +159,7 @@ describe("NegRiskCtfCollateralAdapter Wrapped/Unwrapped", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskCtfCollateralAdapter",
               event: "Wrapped",
               params: {

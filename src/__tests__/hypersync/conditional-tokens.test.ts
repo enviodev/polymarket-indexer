@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
 // Import handlers to register them
-import "../../handlers/FeeModule.js";
-import "../../handlers/UmaSportsOracle.js";
-import "../../handlers/Wallet.js";
-import "../../handlers/Exchange.js";
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/FPMMFactory.js";
-import "../../handlers/FixedProductMarketMaker.js";
 
 describe("HyperSync - ConditionalTokens", () => {
   // ============================================================
@@ -103,8 +95,8 @@ describe("HyperSync - ConditionalTokens", () => {
       for (const split of splitSets) {
         expect(typeof split.amount).toBe("bigint");
         expect(split.amount).toBeGreaterThan(0n);
-        expect(typeof split.timestamp).toBe("bigint");
-        expect(split.timestamp).toBeGreaterThan(0n);
+        expect(typeof split.timestamp).toBe("number");
+        expect(split.timestamp).toBeGreaterThan(0);
         expect(split.stakeholder).toMatch(/^0x[a-fA-F0-9]{40}$/);
         expect(split.condition).toMatch(/^0x[a-f0-9]{64}$/);
       }
@@ -178,8 +170,8 @@ describe("HyperSync - ConditionalTokens", () => {
       for (const merge of mergeSets) {
         expect(typeof merge.amount).toBe("bigint");
         expect(merge.amount).toBeGreaterThan(0n);
-        expect(typeof merge.timestamp).toBe("bigint");
-        expect(merge.timestamp).toBeGreaterThan(0n);
+        expect(typeof merge.timestamp).toBe("number");
+        expect(merge.timestamp).toBeGreaterThan(0);
         expect(merge.stakeholder).toMatch(/^0x[a-fA-F0-9]{40}$/);
         expect(merge.condition).toMatch(/^0x[a-f0-9]{64}$/);
       }

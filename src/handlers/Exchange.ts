@@ -89,7 +89,7 @@ indexer.onEvent(
   context.OrderFilledEvent.set({
     id: eventId,
     transactionHash: event.transaction.hash,
-    timestamp: BigInt(event.block.timestamp),
+    timestamp: event.block.timestamp,
     orderHash: event.params.orderHash,
     maker: event.params.maker,
     taker: event.params.taker,
@@ -171,7 +171,7 @@ indexer.onEvent(
   // Record OrdersMatchedEvent
   context.OrdersMatchedEvent.set({
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    timestamp: BigInt(event.block.timestamp),
+    timestamp: event.block.timestamp,
     makerAssetID: event.params.makerAssetId,
     takerAssetID: event.params.takerAssetId,
     makerAmountFilled: event.params.makerAmountFilled,

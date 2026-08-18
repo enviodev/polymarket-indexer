@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/NegRiskAdapter.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 const MARKET_ID =
   "0x1000000000000000000000000000000000000000000000000000000000000001";
@@ -20,6 +20,7 @@ describe("NegRiskAdapter.MarketPrepared", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskAdapter",
               event: "MarketPrepared",
               params: {
@@ -50,6 +51,7 @@ describe("NegRiskAdapter.QuestionPrepared", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskAdapter",
               event: "MarketPrepared",
               params: {
@@ -96,6 +98,7 @@ describe("NegRiskAdapter.QuestionPrepared", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskAdapter",
               event: "QuestionPrepared",
               params: {
@@ -132,6 +135,7 @@ describe("NegRiskAdapter.PositionSplit", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskAdapter",
               event: "PositionSplit",
               params: {

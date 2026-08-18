@@ -3,6 +3,14 @@ name: polymarket-indexer
 disable_default_cross_chain: true # recommended; default in HyperIndex v4
 description: Unified Polymarket HyperIndex
 
+# Postgres serves the GraphQL API (mutable aggregates, entities handlers read
+# back). ClickHouse holds the massive append-only event streams — fills,
+# activity, transfers — routed per entity via @storage in schema.graphql.
+storage:
+  postgres:
+    default: true
+  clickhouse: true
+
 contracts:
   # Phase 1A: Fee Module
   - name: FeeModule
@@ -125,10 +133,16 @@ contracts:
       - event: "PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)"
 
   # Phase 5: NegRiskCtfCollateralAdapter — pUSD-backed neg-risk CTF + wrap/unwrap
+  # Also registers the position lifecycle events: none emitted on-chain yet
+  # (as of 2026-07 the adapters only route CTF-level events), but if Polymarket
+  # launches v2 neg-risk markets these become the isNegRisk=true stream.
   - name: NegRiskCtfCollateralAdapter
     events:
       - event: "Wrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
       - event: "Unwrapped(address indexed caller, address indexed asset, address indexed to, uint256 amount)"
+      - event: "PositionSplit(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
+      - event: "PositionsMerge(address indexed stakeholder, address collateralToken, bytes32 indexed parentCollectionId, bytes32 indexed conditionId, uint256[] partition, uint256 amount)"
+      - event: "PayoutRedemption(address indexed redeemer, address indexed collateralToken, bytes32 indexed parentCollectionId, bytes32 conditionId, uint256[] indexSets, uint256 payout)"
 
 field_selection:
   transaction_fields:

@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
 // Import handlers to register them
-import "../../handlers/FeeModule.js";
-import "../../handlers/UmaSportsOracle.js";
-import "../../handlers/Wallet.js";
-import "../../handlers/Exchange.js";
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/FPMMFactory.js";
-import "../../handlers/FixedProductMarketMaker.js";
 
 const COLLATERAL_SCALE = 1_000_000n;
 
@@ -120,8 +112,8 @@ describe("HyperSync - Exchange", () => {
     for (const ofe of orderFilledSets) {
       expect(ofe.id).toMatch(/^\d+_\d+_\d+$/); // chainId_block_logIndex format
       expect(ofe.transactionHash).toMatch(/^0x[a-f0-9]{64}$/);
-      expect(typeof ofe.timestamp).toBe("bigint");
-      expect(ofe.timestamp).toBeGreaterThan(0n);
+      expect(typeof ofe.timestamp).toBe("number");
+      expect(ofe.timestamp).toBeGreaterThan(0);
       expect(ofe.orderHash).toMatch(/^0x[a-f0-9]/);
       expect(ofe.maker).toMatch(/^0x[a-fA-F0-9]{40}$/);
       expect(ofe.taker).toMatch(/^0x[a-fA-F0-9]{40}$/);

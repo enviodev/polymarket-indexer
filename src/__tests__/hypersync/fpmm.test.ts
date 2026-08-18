@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
 // Import handlers to register them
-import "../../handlers/FeeModule.js";
-import "../../handlers/UmaSportsOracle.js";
-import "../../handlers/Wallet.js";
-import "../../handlers/Exchange.js";
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/FPMMFactory.js";
-import "../../handlers/FixedProductMarketMaker.js";
 
 describe("HyperSync - FPMM", () => {
   // ============================================================
@@ -73,8 +65,8 @@ describe("HyperSync - FPMM", () => {
         expect(txn.tradeAmount).toBeGreaterThan(0n);
         expect(typeof txn.feeAmount).toBe("bigint");
         expect(txn.feeAmount).toBeGreaterThanOrEqual(0n);
-        expect(typeof txn.timestamp).toBe("bigint");
-        expect(txn.timestamp).toBeGreaterThan(0n);
+        expect(typeof txn.timestamp).toBe("number");
+        expect(txn.timestamp).toBeGreaterThan(0);
         expect(txn.user).toMatch(/^0x[a-fA-F0-9]{40}$/);
         expect(txn.market_id).toMatch(/^0x[a-fA-F0-9]{40}$/);
         expect(typeof txn.outcomeIndex).toBe("bigint");
@@ -140,8 +132,8 @@ describe("HyperSync - FPMM", () => {
       // At least one amount should be > 0
       const totalAdded = (fa.amountsAdded[0] ?? 0n) + (fa.amountsAdded[1] ?? 0n);
       expect(totalAdded).toBeGreaterThan(0n);
-      expect(typeof fa.timestamp).toBe("bigint");
-      expect(fa.timestamp).toBeGreaterThan(0n);
+      expect(typeof fa.timestamp).toBe("number");
+      expect(fa.timestamp).toBeGreaterThan(0);
       expect(fa.funder).toMatch(/^0x[a-fA-F0-9]{40}$/);
       expect(fa.fpmm_id).toMatch(/^0x[a-fA-F0-9]{40}$/);
       // Refunded amounts should be non-negative
@@ -178,8 +170,8 @@ describe("HyperSync - FPMM", () => {
         expect(fr.amountsRemoved.length).toBe(2);
         expect(typeof fr.collateralRemoved).toBe("bigint");
         expect(fr.collateralRemoved).toBeGreaterThanOrEqual(0n);
-        expect(typeof fr.timestamp).toBe("bigint");
-        expect(fr.timestamp).toBeGreaterThan(0n);
+        expect(typeof fr.timestamp).toBe("number");
+        expect(fr.timestamp).toBeGreaterThan(0);
         expect(fr.funder).toMatch(/^0x[a-fA-F0-9]{40}$/);
         expect(fr.fpmm_id).toMatch(/^0x[a-fA-F0-9]{40}$/);
       }

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/ConditionalTokens.js";
-import "../../../handlers/v2/CtfCollateralAdapter.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 import { getUserPositionEntityId } from "../../../utils/pnl.js";
 import {
   CONDITIONAL_TOKENS,
@@ -45,6 +44,7 @@ const transferBatch = (
 ) => ({
   contract: "ConditionalTokens" as const,
   srcAddress: CONDITIONAL_TOKENS as `0x${string}`,
+  block: SIM_BLOCK,
   event: "TransferBatch" as const,
   params: { operator: from, from, to, ids, values },
 });

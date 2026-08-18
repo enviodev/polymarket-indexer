@@ -19,6 +19,22 @@ Polymarket originally used 8 separate subgraphs (The Graph, AssemblyScript) to i
 | 7 | **pnl** | User positions, weighted average cost basis, realized PnL |
 | 8 | **fpmm** | Fixed Product Market Maker analytics (AMM pools, liquidity, pricing) |
 
+## Storage
+
+The indexer runs on envio 3.7 with a split storage backend (`storage:` in
+`config.yaml`):
+
+- **Postgres** (default) serves the GraphQL API: markets, conditions, open
+  interest, wallets, PnL (`UserPosition`), FPMM pools, and all V2 aggregates.
+- **ClickHouse** holds the massive append-only event streams — order fills,
+  matches, splits/merges/redemptions, FPMM transactions, pUSD transfers —
+  routed per entity with `@storage(clickhouse: ...)` in `schema.graphql`.
+  Tables are partitioned by month and sorted for their primary access pattern
+  (user-first for activity feeds, time-first for fills). These entities are
+  not queryable over GraphQL; query ClickHouse directly for analytics.
+- `V2OrderFill` / `V2OrderMatch` are written to **both**: Postgres powers the
+  live trade feed and `V2Market` relations, ClickHouse the analytics.
+
 ## Architecture
 
 Handlers for the same contract are **merged** — a single `ConditionalTokens.PositionSplit.handler` simultaneously updates open interest, records the split activity, and adjusts user PnL positions. This eliminates redundant event processing.

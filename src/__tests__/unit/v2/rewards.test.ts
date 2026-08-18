@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/v2/Rewards.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 
 const MARKET_ID =
   "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
@@ -16,6 +16,7 @@ describe("Rewards.DistributedRewards", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "DistributedRewards",
               params: { user: USER, amount: 10_000n },
@@ -41,6 +42,7 @@ describe("Rewards.MarketCreated + MarketClosed", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "MarketCreated",
               params: {
@@ -75,6 +77,7 @@ describe("Rewards.MarketCreated + MarketClosed", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "MarketCreated",
               params: {
@@ -105,6 +108,7 @@ describe("Rewards.Sponsored", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "Sponsored",
               params: {
@@ -138,6 +142,7 @@ describe("Rewards.MarketClosed on missing market", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "MarketClosed",
               params: { marketId: MARKET_ID, closedAt: 1714100000n },
@@ -161,6 +166,7 @@ describe("Rewards.Withdrawn", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "Sponsored",
               params: {
@@ -205,6 +211,7 @@ describe("Rewards.Withdrawn", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Rewards",
               event: "Withdrawn",
               params: {
