@@ -1,9 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
+import { getAddress } from "viem";
 import { SIM_BLOCK } from "../simBlock.js";
+import { computeProxyWalletAddress } from "../../utils/wallet.js";
+import {
+  PROXY_WALLET_FACTORY,
+  PROXY_WALLET_IMPLEMENTATION,
+} from "../../utils/constants.js";
 
-// The proxy wallet factory — must match the PROXY_WALLET_FACTORY constant in src/utils/constants.ts
-const PROXY_WALLET_FACTORY = "0xab45c5a4b0c941a2f231c04c3f49182e1a254052";
 const ALICE = "0x1111111111111111111111111111111111111111";
 const BOB = "0x2222222222222222222222222222222222222222";
 const UNKNOWN = "0x3333333333333333333333333333333333333333";
@@ -31,7 +35,6 @@ describe("SafeProxyFactory.ProxyCreation", () => {
     expect(wallet).toBeDefined();
     expect(wallet!.signer.toLowerCase()).toBe(BOB);
     expect(wallet!.type).toBe("safe");
-    expect(wallet!.balance).toBe(0n);
   });
 });
 
@@ -97,108 +100,14 @@ describe("RelayHub.TransactionRelayed (proxy wallet detection)", () => {
     const wallets = await indexer.Wallet.getAll();
     expect(wallets.length).toBe(0);
   });
-});
 
-describe("USDC.Transfer (balance tracking)", () => {
-  it("updates wallet balance on incoming USDC transfer when recipient is a known wallet", async () => {
+  it("registers the wallet under its EIP-55 checksummed proxy address", async () => {
     const indexer = createTestIndexer();
-
-    // Seed a known wallet
-    indexer.Wallet.set({
-      id: BOB,
-      signer: BOB,
-      type: "safe",
-      balance: 0n,
-      lastTransfer: 0n,
-      createdAt: 0n,
-    });
-
-    await indexer.process({
-      chains: {
-        137: {
-          simulate: [
-            {
-              block: SIM_BLOCK,
-              contract: "USDC",
-              event: "Transfer",
-              params: { from: UNKNOWN, to: BOB, amount: 1_500n },
-            },
-          ],
-        },
-      },
-    });
-
-    const wallet = await indexer.Wallet.get(BOB);
-    expect(wallet!.balance).toBe(1_500n);
-  });
-
-  it("decrements wallet balance on outgoing USDC transfer when sender is a known wallet", async () => {
-    const indexer = createTestIndexer();
-
-    indexer.Wallet.set({
-      id: ALICE,
-      signer: ALICE,
-      type: "safe",
-      balance: 5_000n,
-      lastTransfer: 0n,
-      createdAt: 0n,
-    });
-
-    await indexer.process({
-      chains: {
-        137: {
-          simulate: [
-            {
-              block: SIM_BLOCK,
-              contract: "USDC",
-              event: "Transfer",
-              params: { from: ALICE, to: UNKNOWN, amount: 1_500n },
-            },
-          ],
-        },
-      },
-    });
-
-    const wallet = await indexer.Wallet.get(ALICE);
-    expect(wallet!.balance).toBe(3_500n);
-  });
-
-  it("does NOT create entities when neither sender nor receiver is a known Wallet", async () => {
-    const indexer = createTestIndexer();
-
-    await indexer.process({
-      chains: {
-        137: {
-          simulate: [
-            {
-              block: SIM_BLOCK,
-              contract: "USDC",
-              event: "Transfer",
-              params: { from: UNKNOWN, to: ALICE, amount: 500n },
-            },
-          ],
-        },
-      },
-    });
-
-    expect((await indexer.Wallet.getAll()).length).toBe(0);
-  });
-});
-
-describe("Proxy wallet USDC balance tracking (address casing)", () => {
-  it("updates a proxy wallet's balance from a checksummed USDC Transfer", async () => {
-    const indexer = createTestIndexer();
-    const { computeProxyWalletAddress } = await import("../../utils/wallet.js");
-    const { getAddress } = await import("viem");
-    const {
-      PROXY_WALLET_FACTORY: FACTORY,
-      PROXY_WALLET_IMPLEMENTATION: IMPL,
-    } = await import("../../utils/constants.js");
 
     const walletAddress = computeProxyWalletAddress(
       ALICE as `0x${string}`,
-      FACTORY as `0x${string}`,
-      IMPL as `0x${string}`,
+      PROXY_WALLET_FACTORY as `0x${string}`,
+      PROXY_WALLET_IMPLEMENTATION as `0x${string}`,
     );
     // The computed id must be EIP-55 checksummed so that envio's
     // checksummed event params match it on lookup
@@ -221,16 +130,6 @@ describe("Proxy wallet USDC balance tracking (address casing)", () => {
                 charge: 0n,
               },
             },
-            {
-              contract: "USDC",
-              event: "Transfer",
-              params: {
-                // checksummed, as envio delivers event params
-                from: getAddress(BOB),
-                to: walletAddress,
-                amount: 7_000_000n,
-              },
-            },
           ],
         },
       },
@@ -239,6 +138,5 @@ describe("Proxy wallet USDC balance tracking (address casing)", () => {
     const wallet = await indexer.Wallet.get(walletAddress);
     expect(wallet).toBeDefined();
     expect(wallet!.type).toBe("proxy");
-    expect(wallet!.balance).toBe(7_000_000n);
   });
 });

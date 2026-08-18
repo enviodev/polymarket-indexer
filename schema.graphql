@@ -47,18 +47,15 @@ type Market {
 ## Phase 2A: Wallet
 ## ============================================================
 
+# Registry of Polymarket proxy wallets (magic-link proxies + Gnosis Safes),
+# mapping each wallet to its owner EOA for user-level attribution. USDC.e
+# balance tracking was dropped with the pUSD transition — live balances are
+# in V2PolyUSDAccount.
 type Wallet {
   id: ID!
   signer: String! @index
   type: String!
-  balance: BigInt!
-  lastTransfer: BigInt!
   createdAt: BigInt!
-}
-
-type GlobalUSDCBalance {
-  id: ID!
-  balance: BigInt!
 }
 
 ## ============================================================
