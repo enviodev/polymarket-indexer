@@ -41,7 +41,7 @@ const onPositionSplit = async ({ event, context }: any) => {
       event.srcAddress.toLowerCase() === NEG_RISK_ADAPTER_ADDR.toLowerCase();
 
     context.V2CtfSplit.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       stakeholder: event.params.stakeholder,
       collateralToken: event.params.collateralToken,
       parentCollectionId: event.params.parentCollectionId,
@@ -86,7 +86,7 @@ const onPositionsMerge = async ({ event, context }: any) => {
       event.srcAddress.toLowerCase() === NEG_RISK_ADAPTER_ADDR.toLowerCase();
 
     context.V2CtfMerge.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       stakeholder: event.params.stakeholder,
       collateralToken: event.params.collateralToken,
       parentCollectionId: event.params.parentCollectionId,
@@ -130,7 +130,7 @@ const onPayoutRedemption = async ({ event, context }: any) => {
       event.srcAddress.toLowerCase() === NEG_RISK_ADAPTER_ADDR.toLowerCase();
 
     context.V2CtfRedemption.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       redeemer: event.params.redeemer,
       collateralToken: event.params.collateralToken,
       parentCollectionId: event.params.parentCollectionId,
@@ -319,7 +319,7 @@ indexer.onEvent(
   { contract: "NegRiskCtfCollateralAdapter", event: "Wrapped" },
   async ({ event, context }) => {
     context.V2PolyUSDWrap.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       eventType: "wrap_negrisk_ctf",
       caller: event.params.caller,
       asset: event.params.asset,
@@ -337,7 +337,7 @@ indexer.onEvent(
   { contract: "NegRiskCtfCollateralAdapter", event: "Unwrapped" },
   async ({ event, context }) => {
     context.V2PolyUSDWrap.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       eventType: "unwrap_negrisk_ctf",
       caller: event.params.caller,
       asset: event.params.asset,

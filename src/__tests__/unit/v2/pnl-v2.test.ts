@@ -133,6 +133,7 @@ describe("CtfCollateralAdapter PnL", () => {
     payoutDenominator = 0n,
   ) => {
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [POSITION_ID_0, POSITION_ID_1],
       payoutNumerators,
@@ -286,6 +287,7 @@ describe("ConditionalTokens skips V2 intermediaries", () => {
   it("does not book activity or PnL for CTF splits by the CtfCollateralAdapter", async () => {
     const indexer = createTestIndexer();
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [1000n, 2000n],
       payoutNumerators: [],

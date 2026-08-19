@@ -124,6 +124,7 @@ describe("NegRiskAdapter.PositionSplit", () => {
 
     // Seed a condition so the OI branch runs (otherwise only Activity runs)
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [100n, 101n],
       payoutNumerators: [],

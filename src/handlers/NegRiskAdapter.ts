@@ -129,7 +129,7 @@ indexer.onEvent(
   // Activity: Create Split (skip NegRiskExchange)
   if (!skipExchange) {
     context.Split.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       timestamp: event.block.timestamp,
       stakeholder,
       condition: conditionId,
@@ -173,7 +173,7 @@ indexer.onEvent(
   // Activity: Create Merge (skip NegRiskExchange)
   if (!skipExchange) {
     context.Merge.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       timestamp: event.block.timestamp,
       stakeholder,
       condition: conditionId,
@@ -214,7 +214,7 @@ indexer.onEvent(
 
   // Activity: Create Redemption with default indexSets for binary
   context.Redemption.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
+    id: getEventKey(event.block.number, event.logIndex),
     timestamp: event.block.timestamp,
     redeemer: event.params.redeemer,
     condition: conditionId,
@@ -261,7 +261,7 @@ indexer.onEvent(
 
   // Activity: Create NegRiskConversion
   context.NegRiskConversion.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
+    id: getEventKey(event.block.number, event.logIndex),
     timestamp: event.block.timestamp,
     stakeholder,
     negRiskMarketId: marketId,

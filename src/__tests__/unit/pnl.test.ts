@@ -17,6 +17,7 @@ describe("PnL via NegRiskAdapter.PositionsConverted", () => {
 
     // Seed a NegRiskEvent so questions are known
     indexer.NegRiskEvent.set({
+      chainId: 137,
       id: MARKET_ID,
       feeBps: 100n,
       questionCount: 3n,
@@ -55,6 +56,7 @@ describe("PnL via ConditionalTokens.PositionSplit", () => {
 
     // Seed condition with known position IDs so the split handler has something to credit to
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [500n, 501n],
       payoutNumerators: [],

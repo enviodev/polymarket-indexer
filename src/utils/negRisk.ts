@@ -61,9 +61,11 @@ export function indexSetContains(indexSet: bigint, index: number): boolean {
   return (indexSet & (1n << BigInt(index))) > 0n;
 }
 
+// Entities are chain-scoped (disable_default_cross_chain), so event keys no
+// longer embed the chainId.
 export function getEventKey(
   blockNumber: number,
   logIndex: number,
 ): string {
-  return `${chainId}_${blockNumber}_${logIndex}`;
+  return `${blockNumber}_${logIndex}`;
 }

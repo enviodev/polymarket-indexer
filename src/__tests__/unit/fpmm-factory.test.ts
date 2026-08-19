@@ -16,6 +16,7 @@ describe("FPMMFactory.FixedProductMarketMakerCreation", () => {
 
     // Seed the Condition so the FPMM handler doesn't bail on the existence check
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [1n, 2n],
       payoutNumerators: [],

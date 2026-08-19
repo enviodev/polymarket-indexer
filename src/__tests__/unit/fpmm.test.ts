@@ -20,6 +20,7 @@ const LP_SETUP = "0x3333333333333333333333333333333333333333" as `0x${string}`;
 // builds pool state organically (funding events) instead of seeding entities.
 function seedCondition(indexer: ReturnType<typeof createTestIndexer>) {
   indexer.Condition.set({
+    chainId: 137,
     id: CONDITION_ID,
     positionIds: [100n, 101n],
     payoutNumerators: [],
