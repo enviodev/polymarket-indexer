@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/ConditionalTokens.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 const ORACLE_REGULAR = "0x0000000000000000000000000000000000000001";
 const NEG_RISK_ADAPTER = "0xd91e80cf2e7be2e162c6513ced06f1dd0da35296";
@@ -22,6 +22,7 @@ describe("ConditionalTokens.ConditionPreparation", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "ConditionPreparation",
               params: {
@@ -52,6 +53,7 @@ describe("ConditionalTokens.ConditionPreparation", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "ConditionPreparation",
               params: {
@@ -80,6 +82,7 @@ describe("ConditionalTokens.ConditionResolution", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "ConditionPreparation",
               params: {
@@ -120,6 +123,7 @@ describe("ConditionalTokens.PositionSplit", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "ConditionPreparation",
               params: {
@@ -165,6 +169,7 @@ describe("ConditionalTokens.PositionSplit", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "ConditionPreparation",
               params: {

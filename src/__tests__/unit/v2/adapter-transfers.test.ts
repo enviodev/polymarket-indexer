@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/ConditionalTokens.js";
-import "../../../handlers/v2/CtfCollateralAdapter.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 import { getUserPositionEntityId } from "../../../utils/pnl.js";
 import {
   CONDITIONAL_TOKENS,
@@ -23,6 +22,7 @@ function seed(
   payoutDenominator = 0n,
 ) {
   indexer.Condition.set({
+    chainId: 137,
     id: CONDITION_ID,
     positionIds: [POSITION_ID_0, POSITION_ID_1],
     payoutNumerators,
@@ -30,6 +30,7 @@ function seed(
   });
   for (const [i, id] of [POSITION_ID_0, POSITION_ID_1].entries()) {
     indexer.Position.set({
+      chainId: 137,
       id: id.toString(),
       condition: CONDITION_ID,
       outcomeIndex: BigInt(i),
@@ -45,6 +46,7 @@ const transferBatch = (
 ) => ({
   contract: "ConditionalTokens" as const,
   srcAddress: CONDITIONAL_TOKENS as `0x${string}`,
+  block: SIM_BLOCK,
   event: "TransferBatch" as const,
   params: { operator: from, from, to, ids, values },
 });
@@ -57,6 +59,7 @@ describe("V2 adapter ERC1155 attribution", () => {
     // User holds both outcomes at 0.50 basis (seeded directly)
     for (const [i, id] of [POSITION_ID_0, POSITION_ID_1].entries()) {
       indexer.UserPosition.set({
+        chainId: 137,
         id: getUserPositionEntityId(USER, id),
         user: USER,
         tokenId: id,
@@ -101,6 +104,7 @@ describe("V2 adapter ERC1155 attribution", () => {
     seed(indexer); // unresolved
 
     indexer.UserPosition.set({
+      chainId: 137,
       id: getUserPositionEntityId(USER, POSITION_ID_0),
       user: USER,
       tokenId: POSITION_ID_0,

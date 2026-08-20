@@ -87,9 +87,9 @@ indexer.onEvent(
 
   // Record transaction
   context.FpmmTransaction.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
+    id: getEventKey(event.block.number, event.logIndex),
     type: "Buy",
-    timestamp: BigInt(event.block.timestamp),
+    timestamp: event.block.timestamp,
     market_id: fpmmAddress,
     user: event.params.buyer,
     tradeAmount: event.params.investmentAmount,
@@ -179,9 +179,9 @@ indexer.onEvent(
 
   // Record transaction
   context.FpmmTransaction.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
+    id: getEventKey(event.block.number, event.logIndex),
     type: "Sell",
-    timestamp: BigInt(event.block.timestamp),
+    timestamp: event.block.timestamp,
     market_id: fpmmAddress,
     user: event.params.seller,
     tradeAmount: event.params.returnAmount,
@@ -266,8 +266,8 @@ indexer.onEvent(
 
   // Record funding addition
   context.FpmmFundingAddition.set({
-    id: getEventKey(event.chainId, event.block.number, event.logIndex),
-    timestamp: BigInt(event.block.timestamp),
+    id: getEventKey(event.block.number, event.logIndex),
+    timestamp: event.block.timestamp,
     fpmm_id: fpmmAddress,
     funder: event.params.funder,
     amountsAdded: amountsAdded.map((v: bigint) => v),
@@ -368,8 +368,8 @@ indexer.onEvent(
 
     // Record funding removal
     context.FpmmFundingRemoval.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
-      timestamp: BigInt(event.block.timestamp),
+      id: getEventKey(event.block.number, event.logIndex),
+      timestamp: event.block.timestamp,
       fpmm_id: fpmmAddress,
       funder: event.params.funder,
       amountsRemoved: amountsRemoved.map((v: bigint) => v),

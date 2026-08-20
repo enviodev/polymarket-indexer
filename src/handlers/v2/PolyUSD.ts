@@ -22,7 +22,7 @@ indexer.onEvent(
     const isBurn = event.params.to === ZERO_ADDR;
 
     context.V2PolyUSDTransfer.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       from: event.params.from,
       to: event.params.to,
       amount: event.params.amount,
@@ -77,7 +77,7 @@ indexer.onEvent(
     const stats = await getOrInitStats(context);
 
     context.V2PolyUSDWrap.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       eventType: "wrap",
       caller: event.params.caller,
       asset: event.params.asset,
@@ -113,7 +113,7 @@ indexer.onEvent(
     const stats = await getOrInitStats(context);
 
     context.V2PolyUSDWrap.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       eventType: "unwrap",
       caller: event.params.caller,
       asset: event.params.asset,

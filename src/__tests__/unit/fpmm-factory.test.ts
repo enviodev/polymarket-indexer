@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/FPMMFactory.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 const CONDITIONAL_TOKENS = "0x4d97dcd97ec945f40cf65f87097ace5ea0476045";
 const OTHER_CT = "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
@@ -16,6 +16,7 @@ describe("FPMMFactory.FixedProductMarketMakerCreation", () => {
 
     // Seed the Condition so the FPMM handler doesn't bail on the existence check
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [1n, 2n],
       payoutNumerators: [],
@@ -27,6 +28,7 @@ describe("FPMMFactory.FixedProductMarketMakerCreation", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "FPMMFactory",
               event: "FixedProductMarketMakerCreation",
               params: {
@@ -59,6 +61,7 @@ describe("FPMMFactory.FixedProductMarketMakerCreation", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "FPMMFactory",
               event: "FixedProductMarketMakerCreation",
               params: {
@@ -87,6 +90,7 @@ describe("FPMMFactory.FixedProductMarketMakerCreation", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "FPMMFactory",
               event: "FixedProductMarketMakerCreation",
               params: {

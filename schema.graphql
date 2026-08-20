@@ -2,12 +2,19 @@
 ## Phase 1A: Fee Module
 ## ============================================================
 
-type FeeRefunded @index(fields: ["refundee", ["timestamp", "DESC"]]) {
+# Append-only stream — ClickHouse only (not read by handlers or the GraphQL API)
+type FeeRefunded
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["refundee", "timestamp"]
+    }
+  ) {
   id: ID!
-  orderHash: String! @index
-  tokenId: String! @index
-  timestamp: BigInt! @index
-  refundee: String! @index
+  orderHash: String!
+  tokenId: String!
+  timestamp: Int!
+  refundee: String!
   feeRefunded: BigInt!
   feeCharged: BigInt!
   negRisk: Boolean!
@@ -40,18 +47,15 @@ type Market {
 ## Phase 2A: Wallet
 ## ============================================================
 
+# Registry of Polymarket proxy wallets (magic-link proxies + Gnosis Safes),
+# mapping each wallet to its owner EOA for user-level attribution. USDC.e
+# balance tracking was dropped with the pUSD transition — live balances are
+# in V2PolyUSDAccount.
 type Wallet {
   id: ID!
   signer: String! @index
   type: String!
-  balance: BigInt!
-  lastTransfer: BigInt!
   createdAt: BigInt!
-}
-
-type GlobalUSDCBalance {
-  id: ID!
-  balance: BigInt!
 }
 
 ## ============================================================
@@ -71,25 +75,39 @@ type MarketData {
   endDate: String!
 }
 
+# The largest stream in the indexer (hundreds of millions of fills) —
+# ClickHouse only. Time-leading sort: market/user queries prune via the
+# monthly partition; charts and leaderboards are time-range scans.
 type OrderFilledEvent
-  @index(fields: ["maker", ["timestamp", "DESC"]])
-  @index(fields: ["makerAssetId", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["timestamp"]
+    }
+  ) {
   id: ID!
   transactionHash: String!
-  timestamp: BigInt! @index
-  orderHash: String! @index
-  maker: String! @index
-  taker: String! @index
-  makerAssetId: String! @index
-  takerAssetId: String! @index
+  timestamp: Int!
+  orderHash: String!
+  maker: String!
+  taker: String!
+  makerAssetId: String!
+  takerAssetId: String!
   makerAmountFilled: BigInt!
   takerAmountFilled: BigInt!
   fee: BigInt!
 }
 
-type OrdersMatchedEvent {
+# Append-only stream — ClickHouse only
+type OrdersMatchedEvent
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
+  timestamp: Int!
   makerAssetID: BigInt!
   takerAssetID: BigInt!
   makerAmountFilled: BigInt!
@@ -153,44 +171,62 @@ type GlobalOpenInterest {
 ## Phase 3B: Activity
 ## ============================================================
 
+# Activity streams (user-facing history feeds) — ClickHouse only,
+# sorted user-first so per-address activity queries read one range.
 type Split
-  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
-  @index(fields: ["condition", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["stakeholder", "timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
-  stakeholder: String! @index
-  condition: String! @index
+  timestamp: Int!
+  stakeholder: String!
+  condition: String!
   amount: BigInt!
 }
 
 type Merge
-  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
-  @index(fields: ["condition", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["stakeholder", "timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
-  stakeholder: String! @index
-  condition: String! @index
+  timestamp: Int!
+  stakeholder: String!
+  condition: String!
   amount: BigInt!
 }
 
 type Redemption
-  @index(fields: ["redeemer", ["timestamp", "DESC"]])
-  @index(fields: ["condition", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["redeemer", "timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
-  redeemer: String! @index
-  condition: String! @index
+  timestamp: Int!
+  redeemer: String!
+  condition: String!
   indexSets: [BigInt!]!
   payout: BigInt!
 }
 
 type NegRiskConversion
-  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
-  @index(fields: ["negRiskMarketId", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["stakeholder", "timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
-  stakeholder: String! @index
-  negRiskMarketId: String! @index
+  timestamp: Int!
+  stakeholder: String!
+  negRiskMarketId: String!
   amount: BigInt!
   indexSet: BigInt!
   questionCount: BigInt!
@@ -263,14 +299,19 @@ enum TransactionType {
   Sell
 }
 
+# FPMM (legacy AMM era) append-only streams — ClickHouse only
 type FpmmTransaction
-  @index(fields: ["market_id", ["timestamp", "DESC"]])
-  @index(fields: ["user", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["user", "timestamp"]
+    }
+  ) {
   id: ID!
   type: TransactionType!
-  timestamp: BigInt! @index
-  market_id: String! @index
-  user: String! @index
+  timestamp: Int!
+  market_id: String!
+  user: String!
   tradeAmount: BigInt!
   feeAmount: BigInt!
   outcomeIndex: BigInt!
@@ -278,24 +319,32 @@ type FpmmTransaction
 }
 
 type FpmmFundingAddition
-  @index(fields: ["fpmm_id", ["timestamp", "DESC"]])
-  @index(fields: ["funder", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["funder", "timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
-  fpmm_id: String! @index
-  funder: String! @index
+  timestamp: Int!
+  fpmm_id: String!
+  funder: String!
   amountsAdded: [BigInt!]!
   amountsRefunded: [BigInt!]!
   sharesMinted: BigInt!
 }
 
 type FpmmFundingRemoval
-  @index(fields: ["fpmm_id", ["timestamp", "DESC"]])
-  @index(fields: ["funder", ["timestamp", "DESC"]]) {
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["funder", "timestamp"]
+    }
+  ) {
   id: ID!
-  timestamp: BigInt! @index
-  fpmm_id: String! @index
-  funder: String! @index
+  timestamp: Int!
+  fpmm_id: String!
+  funder: String!
   amountsRemoved: [BigInt!]!
   collateralRemoved: BigInt!
   sharesBurnt: BigInt!
@@ -331,9 +380,18 @@ type V2Market {
 
 # ── V2 Trading ──────────────────────────────────────────────────────
 
+# Live product stream: Postgres serves the GraphQL feed and the V2Market
+# relations; mirrored into ClickHouse (token-first sort) for analytics.
 type V2OrderFill
   @index(fields: ["maker", ["timestamp", "DESC"]])
   @index(fields: ["tokenId", ["timestamp", "DESC"]])
+  @storage(
+    postgres: true
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["timestamp"]
+    }
+  )
 {
   id: ID!
   orderHash: String! @index
@@ -356,6 +414,13 @@ type V2OrderFill
 
 type V2OrderMatch
   @index(fields: ["takerOrderMaker", ["timestamp", "DESC"]])
+  @storage(
+    postgres: true
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["timestamp"]
+    }
+  )
 {
   id: ID!
   takerOrderHash: String! @index
@@ -371,41 +436,56 @@ type V2OrderMatch
   transactionHash: String!
 }
 
-type V2FeeEvent {
+# Append-only stream — ClickHouse only
+type V2FeeEvent
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["timestamp"]
+    }
+  ) {
   id: ID!
-  receiver: String! @index
+  receiver: String!
   amount: BigInt!
-  timestamp: Int! @index
+  timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
 }
 
 # ── V2 PolyUSD ──────────────────────────────────────────────────────
 
+# pUSD flow streams — ClickHouse only
 type V2PolyUSDTransfer
-  @index(fields: ["from", ["timestamp", "DESC"]])
-  @index(fields: ["to", ["timestamp", "DESC"]])
-{
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["timestamp"]
+    }
+  ) {
   id: ID!
-  from: String! @index
-  to: String! @index
+  from: String!
+  to: String!
   amount: BigInt!
-  timestamp: Int! @index
+  timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
 }
 
 type V2PolyUSDWrap
-  @index(fields: ["txFrom", ["timestamp", "DESC"]])
-{
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["txFrom", "timestamp"]
+    }
+  ) {
   id: ID!
-  eventType: String! @index            # "wrap" | "unwrap" | "wrap_negrisk_ctf" | "unwrap_negrisk_ctf"
-  caller: String! @index               # msg.sender to pUSD (often an onramp contract)
+  eventType: String!                   # "wrap" | "unwrap" | "wrap_negrisk_ctf" | "unwrap_negrisk_ctf"
+  caller: String!                      # msg.sender to pUSD (often an onramp contract)
   asset: String!                       # underlying asset (USDC or USDC.e)
-  to: String! @index                   # recipient of the wrapped token
-  txFrom: String! @index               # originating EOA that initiated the tx
+  to: String!                          # recipient of the wrapped token
+  txFrom: String!                      # originating EOA that initiated the tx
   amount: BigInt!
-  timestamp: Int! @index
+  timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
 }
@@ -419,13 +499,18 @@ type V2PolyUSDAccount {
 
 # ── V2 Rewards ──────────────────────────────────────────────────────
 
+# Append-only stream — ClickHouse only
 type V2RewardDistribution
-  @index(fields: ["user", ["timestamp", "DESC"]])
-{
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["user", "timestamp"]
+    }
+  ) {
   id: ID!
-  user: String! @index
+  user: String!
   amount: BigInt!
-  timestamp: Int! @index
+  timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
 }
@@ -482,9 +567,14 @@ type V2PolyUSDStats {
 
 # ── V2 CTF Collateral Adapter (pUSD-backed position lifecycle) ──────
 
+# Adapter lifecycle streams — ClickHouse only
 type V2CtfSplit
-  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
-  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["stakeholder", "timestamp"]
+    }
+  )
 {
   id: ID!                              # chainId_block_logIdx
   stakeholder: String! @index
@@ -501,8 +591,12 @@ type V2CtfSplit
 }
 
 type V2CtfMerge
-  @index(fields: ["stakeholder", ["timestamp", "DESC"]])
-  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["stakeholder", "timestamp"]
+    }
+  )
 {
   id: ID!
   stakeholder: String! @index
@@ -519,8 +613,12 @@ type V2CtfMerge
 }
 
 type V2CtfRedemption
-  @index(fields: ["redeemer", ["timestamp", "DESC"]])
-  @index(fields: ["conditionId", ["timestamp", "DESC"]])
+  @storage(
+    clickhouse: {
+      partitionBy: "toYYYYMM(toDateTime(timestamp))"
+      orderBy: ["redeemer", "timestamp"]
+    }
+  )
 {
   id: ID!
   redeemer: String! @index

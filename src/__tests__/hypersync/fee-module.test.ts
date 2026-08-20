@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
 // Import handlers to register them
-import "../../handlers/FeeModule.js";
-import "../../handlers/UmaSportsOracle.js";
-import "../../handlers/Wallet.js";
-import "../../handlers/Exchange.js";
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/FPMMFactory.js";
-import "../../handlers/FixedProductMarketMaker.js";
 
 describe("HyperSync - FeeModule", () => {
   // ============================================================
@@ -45,8 +37,8 @@ describe("HyperSync - FeeModule", () => {
         expect(typeof fr.refundee).toBe("string");
         expect(fr.refundee).toMatch(/^0x[a-fA-F0-9]{40}$/);
         expect(typeof fr.negRisk).toBe("boolean");
-        expect(typeof fr.timestamp).toBe("bigint");
-        expect(fr.timestamp).toBeGreaterThan(0n);
+        expect(typeof fr.timestamp).toBe("number");
+        expect(fr.timestamp).toBeGreaterThan(0);
       }
     }
   }, 30_000);

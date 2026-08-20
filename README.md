@@ -12,12 +12,28 @@ Polymarket originally used 8 separate subgraphs (The Graph, AssemblyScript) to i
 |---|----------|---------------|
 | 1 | **fee-module** | Fee refunds from FeeModule + NegRiskFeeModule |
 | 2 | **sports-oracle** | UMA sports oracle games, markets, scores |
-| 3 | **wallet** | Wallet creation (Gnosis Safe proxies) + USDC balances |
+| 3 | **wallet** | Wallet registry (proxy + Safe wallets -> owner EOA); USDC.e balance tracking retired with the pUSD transition |
 | 4 | **orderbook** | Exchange order fills, matches, per-token + global volume |
 | 5 | **open-interest** | Global + per-market open interest via splits/merges/redemptions |
 | 6 | **activity** | Splits, merges, redemptions, neg-risk conversions |
 | 7 | **pnl** | User positions, weighted average cost basis, realized PnL |
 | 8 | **fpmm** | Fixed Product Market Maker analytics (AMM pools, liquidity, pricing) |
+
+## Storage
+
+The indexer runs on envio 3.7 with a split storage backend (`storage:` in
+`config.yaml`):
+
+- **Postgres** (default) serves the GraphQL API: markets, conditions, open
+  interest, wallets, PnL (`UserPosition`), FPMM pools, and all V2 aggregates.
+- **ClickHouse** holds the massive append-only event streams — order fills,
+  matches, splits/merges/redemptions, FPMM transactions, pUSD transfers —
+  routed per entity with `@storage(clickhouse: ...)` in `schema.graphql`.
+  Tables are partitioned by month and sorted for their primary access pattern
+  (user-first for activity feeds, time-first for fills). These entities are
+  not queryable over GraphQL; query ClickHouse directly for analytics.
+- `V2OrderFill` / `V2OrderMatch` are written to **both**: Postgres powers the
+  live trade feed and `V2Market` relations, ClickHouse the analytics.
 
 ## Architecture
 
@@ -33,7 +49,7 @@ src/
     FPMMFactory.ts             # Dynamic contract registration
     FeeModule.ts               # Fee refund tracking
     UmaSportsOracle.ts         # Sports oracle
-    Wallet.ts                  # Wallet creation + USDC balances
+    Wallet.ts                  # Wallet registry (proxy + Safe creation)
   utils/
     constants.ts               # Contract addresses, scales
     ctf.ts                     # Position/collection ID computation (keccak256)
@@ -54,7 +70,7 @@ src/
 | FixedProductMarketMaker | *(dynamic)* | FPMMBuy, FPMMSell, FPMMFundingAdded, FPMMFundingRemoved, Transfer |
 | FeeModule + NegRiskFeeModule | `0xE3f18aCc5...`, `0xB768891e3...` | FeeRefunded |
 | UmaSportsOracle | `0xb21182d04...` | GameCreated, GameSettled, MarketCreated, MarketResolved, + more |
-| USDC / RelayHub / SafeProxyFactory | Various | Transfer, TransactionRelayed, ProxyCreation |
+| RelayHub / SafeProxyFactory | Various | TransactionRelayed, ProxyCreation |
 
 ## Getting Started
 
@@ -97,7 +113,7 @@ The schema defines 25+ entity types across all domains:
 - **Activity**: `Split`, `Merge`, `Redemption`, `NegRiskConversion`, `Position`
 - **PnL**: `UserPosition` (tracks amount, avgPrice, realizedPnl, totalBought per user per token)
 - **FPMM**: `FixedProductMarketMaker`, `FpmmTransaction`, `FpmmFundingAddition`, `FpmmFundingRemoval`, `FpmmPoolMembership`, `Collateral`
-- **Wallet**: `Wallet`, `GlobalUSDCBalance`
+- **Wallet**: `Wallet` (registry; balances live in `V2PolyUSDAccount`)
 - **Fee Module**: `FeeRefunded`
 - **Sports Oracle**: `Game`, `Market`
 

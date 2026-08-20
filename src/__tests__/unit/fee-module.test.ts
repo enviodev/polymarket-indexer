@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/FeeModule.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 const FEE_MODULE = "0xe3f18acc55091e2c48d883fc8c8413319d4ab7b0";
 const NEG_RISK_FEE_MODULE = "0xb768891e3130f6df18214ac804d4db76c2c37730";
@@ -15,6 +15,7 @@ describe("FeeModule.FeeRefunded", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "FeeModule",
               srcAddress: FEE_MODULE,
               event: "FeeRefunded",
@@ -50,6 +51,7 @@ describe("FeeModule.FeeRefunded", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "FeeModule",
               srcAddress: NEG_RISK_FEE_MODULE,
               event: "FeeRefunded",

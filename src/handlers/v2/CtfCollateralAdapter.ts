@@ -31,17 +31,17 @@ const getOrInitStats = async (context: any, id: string) =>
     totalRedemptionPayout: 0n,
   });
 
-// ── CtfCollateralAdapter (pUSD-backed CTF) ─────────────────────────
+// ── Adapter position lifecycle (pUSD-backed CTF) ───────────────────
+// Shared between CtfCollateralAdapter and NegRiskCtfCollateralAdapter:
+// same event shapes, distinguished per-row via isNegRisk (srcAddress).
 
-indexer.onEvent(
-  { contract: "CtfCollateralAdapter", event: "PositionSplit" },
-  async ({ event, context }) => {
+const onPositionSplit = async ({ event, context }: any) => {
     const stats = await getOrInitStats(context, event.srcAddress);
     const isNegRisk =
       event.srcAddress.toLowerCase() === NEG_RISK_ADAPTER_ADDR.toLowerCase();
 
     context.V2CtfSplit.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       stakeholder: event.params.stakeholder,
       collateralToken: event.params.collateralToken,
       parentCollectionId: event.params.parentCollectionId,
@@ -78,18 +78,15 @@ indexer.onEvent(
         }
       }
     }
-  },
-);
+};
 
-indexer.onEvent(
-  { contract: "CtfCollateralAdapter", event: "PositionsMerge" },
-  async ({ event, context }) => {
+const onPositionsMerge = async ({ event, context }: any) => {
     const stats = await getOrInitStats(context, event.srcAddress);
     const isNegRisk =
       event.srcAddress.toLowerCase() === NEG_RISK_ADAPTER_ADDR.toLowerCase();
 
     context.V2CtfMerge.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       stakeholder: event.params.stakeholder,
       collateralToken: event.params.collateralToken,
       parentCollectionId: event.params.parentCollectionId,
@@ -125,18 +122,15 @@ indexer.onEvent(
         }
       }
     }
-  },
-);
+};
 
-indexer.onEvent(
-  { contract: "CtfCollateralAdapter", event: "PayoutRedemption" },
-  async ({ event, context }) => {
+const onPayoutRedemption = async ({ event, context }: any) => {
     const stats = await getOrInitStats(context, event.srcAddress);
     const isNegRisk =
       event.srcAddress.toLowerCase() === NEG_RISK_ADAPTER_ADDR.toLowerCase();
 
     context.V2CtfRedemption.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       redeemer: event.params.redeemer,
       collateralToken: event.params.collateralToken,
       parentCollectionId: event.params.parentCollectionId,
@@ -181,8 +175,16 @@ indexer.onEvent(
         }
       }
     }
-  },
-);
+};
+
+for (const contract of [
+  "CtfCollateralAdapter",
+  "NegRiskCtfCollateralAdapter",
+] as const) {
+  indexer.onEvent({ contract, event: "PositionSplit" }, onPositionSplit);
+  indexer.onEvent({ contract, event: "PositionsMerge" }, onPositionsMerge);
+  indexer.onEvent({ contract, event: "PayoutRedemption" }, onPayoutRedemption);
+}
 
 // ── V2 adapter ERC1155 flows (user attribution) ─────────────────────
 //
@@ -317,7 +319,7 @@ indexer.onEvent(
   { contract: "NegRiskCtfCollateralAdapter", event: "Wrapped" },
   async ({ event, context }) => {
     context.V2PolyUSDWrap.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       eventType: "wrap_negrisk_ctf",
       caller: event.params.caller,
       asset: event.params.asset,
@@ -335,7 +337,7 @@ indexer.onEvent(
   { contract: "NegRiskCtfCollateralAdapter", event: "Unwrapped" },
   async ({ event, context }) => {
     context.V2PolyUSDWrap.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       eventType: "unwrap_negrisk_ctf",
       caller: event.params.caller,
       asset: event.params.asset,

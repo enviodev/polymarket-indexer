@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
+import { SIM_BLOCK } from "../simBlock.js";
 // Register ConditionalTokens + NegRiskAdapter + Exchange — any of these can drive PnL
-import "../../handlers/ConditionalTokens.js";
-import "../../handlers/NegRiskAdapter.js";
-import "../../handlers/Exchange.js";
 
 const USER = "0x1111111111111111111111111111111111111111";
 const OTHER_USER = "0x2222222222222222222222222222222222222222";
@@ -19,6 +17,7 @@ describe("PnL via NegRiskAdapter.PositionsConverted", () => {
 
     // Seed a NegRiskEvent so questions are known
     indexer.NegRiskEvent.set({
+      chainId: 137,
       id: MARKET_ID,
       feeBps: 100n,
       questionCount: 3n,
@@ -30,6 +29,7 @@ describe("PnL via NegRiskAdapter.PositionsConverted", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "NegRiskAdapter",
               event: "PositionsConverted",
               params: {
@@ -56,6 +56,7 @@ describe("PnL via ConditionalTokens.PositionSplit", () => {
 
     // Seed condition with known position IDs so the split handler has something to credit to
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [500n, 501n],
       payoutNumerators: [],
@@ -67,6 +68,7 @@ describe("PnL via ConditionalTokens.PositionSplit", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               event: "PositionSplit",
               params: {
@@ -102,6 +104,7 @@ describe("PnL via Exchange.OrderFilled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Exchange",
               event: "OrderFilled",
               params: {

@@ -11,7 +11,7 @@ indexer.onEvent(
       id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
       orderHash: event.params.orderHash,
       tokenId: event.params.id.toString(),
-      timestamp: BigInt(event.block.timestamp),
+      timestamp: event.block.timestamp,
       refundee: event.params.to,
       feeRefunded: event.params.refund,
       feeCharged: event.params.feeCharged,

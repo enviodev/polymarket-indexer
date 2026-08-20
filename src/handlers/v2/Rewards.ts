@@ -7,7 +7,7 @@ indexer.onEvent(
   { contract: "Rewards", event: "DistributedRewards" },
   async ({ event, context }) => {
     context.V2RewardDistribution.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       user: event.params.user,
       amount: event.params.amount,
       timestamp: event.block.timestamp,
@@ -40,7 +40,7 @@ indexer.onEvent(
   { contract: "Rewards", event: "Sponsored" },
   async ({ event, context }) => {
     context.V2Sponsorship.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       market_id: event.params.marketId,
       sponsor: event.params.sponsor,
       amount: event.params.amount,

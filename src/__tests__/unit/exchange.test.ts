@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../handlers/Exchange.js";
+import { SIM_BLOCK } from "../simBlock.js";
 
 const MAKER = "0x1111111111111111111111111111111111111111";
 const TAKER = "0x2222222222222222222222222222222222222222";
@@ -18,6 +18,7 @@ describe("Exchange.OrderFilled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Exchange",
               event: "OrderFilled",
               params: {
@@ -58,6 +59,7 @@ describe("Exchange.OrderFilled", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Exchange",
               event: "OrderFilled",
               params: {
@@ -92,6 +94,7 @@ describe("Exchange.OrdersMatched", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Exchange",
               event: "OrdersMatched",
               params: {
@@ -126,6 +129,7 @@ describe("Exchange.TokenRegistered", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "Exchange",
               event: "TokenRegistered",
               params: { token0: 11n, token1: 22n, conditionId: CONDITION_ID },

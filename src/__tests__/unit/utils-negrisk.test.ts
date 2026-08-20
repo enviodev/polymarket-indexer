@@ -117,11 +117,11 @@ describe("indexSetContains", () => {
 });
 
 describe("getEventKey", () => {
-  it("joins chainId, blockNumber, logIndex with underscores", () => {
-    expect(getEventKey(137, 12345, 7)).toBe("137_12345_7");
+  it("joins blockNumber and logIndex with underscores (entities are chain-scoped)", () => {
+    expect(getEventKey(12345, 7)).toBe("12345_7");
   });
 
   it("handles zero values", () => {
-    expect(getEventKey(0, 0, 0)).toBe("0_0_0");
+    expect(getEventKey(0, 0)).toBe("0_0");
   });
 });

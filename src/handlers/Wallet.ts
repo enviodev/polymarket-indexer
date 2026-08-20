@@ -5,7 +5,10 @@ import {
 } from "../utils/constants.js";
 import { computeProxyWalletAddress } from "../utils/wallet.js";
 
-const GLOBAL_USDC_ID = "global";
+// Wallet registry only: maps proxy wallets to their owner EOAs. USDC.e
+// balance tracking (the official wallet subgraph's other half) was dropped
+// with the pUSD transition — it required indexing every USDC.e transfer on
+// Polygon; live balances are tracked in V2PolyUSDAccount from pUSD events.
 
 // ============================================================
 // RelayHub — proxy wallet creation
@@ -34,8 +37,6 @@ indexer.onEvent(
       id: walletAddress,
       signer: from,
       type: "proxy",
-      balance: 0n,
-      lastTransfer: 0n,
       createdAt: BigInt(event.block.timestamp),
     });
   }
@@ -57,72 +58,8 @@ indexer.onEvent(
       id: proxyAddress,
       signer: event.params.owner,
       type: "safe",
-      balance: 0n,
-      lastTransfer: 0n,
       createdAt: BigInt(event.block.timestamp),
     });
-  }
-  },
-);
-
-// ============================================================
-// USDC Transfer — wallet balance tracking
-// ============================================================
-
-indexer.onEvent(
-  { contract: "USDC", event: "Transfer" },
-  async ({ event, context }) => {
-  const from = event.params.from;
-  const to = event.params.to;
-  const amount = event.params.amount;
-  const timestamp = BigInt(event.block.timestamp);
-
-  // Check receiver
-  const toWallet = await context.Wallet.get(to);
-  if (toWallet) {
-    context.Wallet.set({
-      ...toWallet,
-      balance: toWallet.balance + amount,
-      lastTransfer: timestamp,
-    });
-
-    // Update global balance
-    const global = await context.GlobalUSDCBalance.get(GLOBAL_USDC_ID);
-    if (global) {
-      context.GlobalUSDCBalance.set({
-        ...global,
-        balance: global.balance + amount,
-      });
-    } else {
-      context.GlobalUSDCBalance.set({
-        id: GLOBAL_USDC_ID,
-        balance: amount,
-      });
-    }
-  }
-
-  // Check sender
-  const fromWallet = await context.Wallet.get(from);
-  if (fromWallet) {
-    context.Wallet.set({
-      ...fromWallet,
-      balance: fromWallet.balance - amount,
-      lastTransfer: timestamp,
-    });
-
-    // Update global balance
-    const global = await context.GlobalUSDCBalance.get(GLOBAL_USDC_ID);
-    if (global) {
-      context.GlobalUSDCBalance.set({
-        ...global,
-        balance: global.balance - amount,
-      });
-    } else {
-      context.GlobalUSDCBalance.set({
-        id: GLOBAL_USDC_ID,
-        balance: 0n - amount,
-      });
-    }
   }
   },
 );

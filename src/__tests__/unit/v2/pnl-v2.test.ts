@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestIndexer } from "envio";
-import "../../../handlers/v2/CTFExchangeV2.js";
-import "../../../handlers/v2/CtfCollateralAdapter.js";
-import "../../../handlers/ConditionalTokens.js";
+import { SIM_BLOCK } from "../../simBlock.js";
 import { getUserPositionEntityId } from "../../../utils/pnl.js";
 import {
   CTF_COLLATERAL_ADAPTER,
@@ -25,6 +23,7 @@ const TOKEN_ID = 42n;
 const orderFilled = (overrides: Record<string, unknown>) => ({
   contract: "CTFExchangeV2" as const,
   srcAddress: FIRST_V2_EXCHANGE,
+  block: SIM_BLOCK,
   event: "OrderFilled" as const,
   params: {
     orderHash: ORDER_HASH,
@@ -134,6 +133,7 @@ describe("CtfCollateralAdapter PnL", () => {
     payoutDenominator = 0n,
   ) => {
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [POSITION_ID_0, POSITION_ID_1],
       payoutNumerators,
@@ -150,6 +150,7 @@ describe("CtfCollateralAdapter PnL", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CtfCollateralAdapter",
               srcAddress: CTF_COLLATERAL_ADAPTER,
               event: "PositionSplit",
@@ -185,6 +186,7 @@ describe("CtfCollateralAdapter PnL", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CtfCollateralAdapter",
               srcAddress: CTF_COLLATERAL_ADAPTER,
               event: "PositionSplit",
@@ -234,6 +236,7 @@ describe("CtfCollateralAdapter PnL", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "CtfCollateralAdapter",
               srcAddress: CTF_COLLATERAL_ADAPTER,
               event: "PositionSplit",
@@ -284,6 +287,7 @@ describe("ConditionalTokens skips V2 intermediaries", () => {
   it("does not book activity or PnL for CTF splits by the CtfCollateralAdapter", async () => {
     const indexer = createTestIndexer();
     indexer.Condition.set({
+      chainId: 137,
       id: CONDITION_ID,
       positionIds: [1000n, 2000n],
       payoutNumerators: [],
@@ -295,6 +299,7 @@ describe("ConditionalTokens skips V2 intermediaries", () => {
         137: {
           simulate: [
             {
+              block: SIM_BLOCK,
               contract: "ConditionalTokens",
               srcAddress: CONDITIONAL_TOKENS,
               event: "PositionSplit",

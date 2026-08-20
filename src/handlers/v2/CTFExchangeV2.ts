@@ -81,7 +81,7 @@ indexer.onEvent(
     const marketId = await ensureMarket(context, event.params.tokenId);
 
     context.V2OrderFill.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       orderHash: event.params.orderHash,
       maker: event.params.maker,
       taker: event.params.taker,
@@ -143,7 +143,7 @@ indexer.onEvent(
     const marketId = await ensureMarket(context, event.params.tokenId);
 
     context.V2OrderMatch.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       takerOrderHash: event.params.takerOrderHash,
       takerOrderMaker: event.params.takerOrderMaker,
       side: Number(event.params.side),
@@ -168,7 +168,7 @@ indexer.onEvent(
   { contract: "CTFExchangeV2", event: "FeeCharged" },
   async ({ event, context }) => {
     context.V2FeeEvent.set({
-      id: getEventKey(event.chainId, event.block.number, event.logIndex),
+      id: getEventKey(event.block.number, event.logIndex),
       receiver: event.params.receiver,
       amount: event.params.amount,
       timestamp: event.block.timestamp,
