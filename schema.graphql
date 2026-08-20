@@ -15,8 +15,8 @@ type FeeRefunded
   tokenId: String!
   timestamp: Int!
   refundee: String!
-  feeRefunded: BigInt!
-  feeCharged: BigInt!
+  feeRefunded: BigInt! @config(precision: 38)
+  feeCharged: BigInt! @config(precision: 38)
   negRisk: Boolean!
 }
 
@@ -93,9 +93,9 @@ type OrderFilledEvent
   taker: String!
   makerAssetId: String!
   takerAssetId: String!
-  makerAmountFilled: BigInt!
-  takerAmountFilled: BigInt!
-  fee: BigInt!
+  makerAmountFilled: BigInt! @config(precision: 38)
+  takerAmountFilled: BigInt! @config(precision: 38)
+  fee: BigInt! @config(precision: 38)
 }
 
 # Append-only stream — ClickHouse only
@@ -110,8 +110,8 @@ type OrdersMatchedEvent
   timestamp: Int!
   makerAssetID: BigInt!
   takerAssetID: BigInt!
-  makerAmountFilled: BigInt!
-  takerAmountFilled: BigInt!
+  makerAmountFilled: BigInt! @config(precision: 38)
+  takerAmountFilled: BigInt! @config(precision: 38)
 }
 
 type Orderbook {
@@ -184,7 +184,7 @@ type Split
   timestamp: Int!
   stakeholder: String!
   condition: String!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
 }
 
 type Merge
@@ -198,7 +198,7 @@ type Merge
   timestamp: Int!
   stakeholder: String!
   condition: String!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
 }
 
 type Redemption
@@ -213,7 +213,7 @@ type Redemption
   redeemer: String!
   condition: String!
   indexSets: [BigInt!]!
-  payout: BigInt!
+  payout: BigInt! @config(precision: 38)
 }
 
 type NegRiskConversion
@@ -227,7 +227,7 @@ type NegRiskConversion
   timestamp: Int!
   stakeholder: String!
   negRiskMarketId: String!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   indexSet: BigInt!
   questionCount: BigInt!
 }
@@ -312,10 +312,10 @@ type FpmmTransaction
   timestamp: Int!
   market_id: String!
   user: String!
-  tradeAmount: BigInt!
-  feeAmount: BigInt!
+  tradeAmount: BigInt! @config(precision: 38)
+  feeAmount: BigInt! @config(precision: 38)
   outcomeIndex: BigInt!
-  outcomeTokensAmount: BigInt!
+  outcomeTokensAmount: BigInt! @config(precision: 38)
 }
 
 type FpmmFundingAddition
@@ -331,7 +331,7 @@ type FpmmFundingAddition
   funder: String!
   amountsAdded: [BigInt!]!
   amountsRefunded: [BigInt!]!
-  sharesMinted: BigInt!
+  sharesMinted: BigInt! @config(precision: 38)
 }
 
 type FpmmFundingRemoval
@@ -346,8 +346,8 @@ type FpmmFundingRemoval
   fpmm_id: String!
   funder: String!
   amountsRemoved: [BigInt!]!
-  collateralRemoved: BigInt!
-  sharesBurnt: BigInt!
+  collateralRemoved: BigInt! @config(precision: 38)
+  sharesBurnt: BigInt! @config(precision: 38)
 }
 
 type FpmmPoolMembership {
@@ -400,9 +400,9 @@ type V2OrderFill
   side: Int!                           # 0=BUY, 1=SELL
   tokenId: BigInt! @index              # conditional token ID
   market: V2Market                     # enriched from Gamma API
-  makerAmountFilled: BigInt!
-  takerAmountFilled: BigInt!
-  fee: BigInt!
+  makerAmountFilled: BigInt! @config(precision: 38)
+  takerAmountFilled: BigInt! @config(precision: 38)
+  fee: BigInt! @config(precision: 38)
   builder: String! @index              # builder code (bytes32)
   metadata: String!                    # metadata (bytes32)
   exchange: String! @index             # source exchange address
@@ -428,8 +428,8 @@ type V2OrderMatch
   side: Int!                           # 0=BUY, 1=SELL
   tokenId: BigInt! @index
   market: V2Market                     # enriched from Gamma API
-  makerAmountFilled: BigInt!
-  takerAmountFilled: BigInt!
+  makerAmountFilled: BigInt! @config(precision: 38)
+  takerAmountFilled: BigInt! @config(precision: 38)
   exchange: String! @index
   timestamp: Int! @index
   blockNumber: Int!
@@ -446,7 +446,7 @@ type V2FeeEvent
   ) {
   id: ID!
   receiver: String!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
@@ -465,7 +465,7 @@ type V2PolyUSDTransfer
   id: ID!
   from: String!
   to: String!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
@@ -484,7 +484,7 @@ type V2PolyUSDWrap
   asset: String!                       # underlying asset (USDC or USDC.e)
   to: String!                          # recipient of the wrapped token
   txFrom: String!                      # originating EOA that initiated the tx
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
@@ -509,7 +509,7 @@ type V2RewardDistribution
   ) {
   id: ID!
   user: String!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   timestamp: Int!
   blockNumber: Int!
   transactionHash: String!
@@ -582,7 +582,7 @@ type V2CtfSplit
   parentCollectionId: String!
   conditionId: String! @index
   partition: [BigInt!]!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   txFrom: String!                      # originating EOA
   timestamp: Int! @index
   blockNumber: Int!
@@ -604,7 +604,7 @@ type V2CtfMerge
   parentCollectionId: String!
   conditionId: String! @index
   partition: [BigInt!]!
-  amount: BigInt!
+  amount: BigInt! @config(precision: 38)
   txFrom: String!
   timestamp: Int! @index
   blockNumber: Int!
@@ -626,7 +626,7 @@ type V2CtfRedemption
   parentCollectionId: String!
   conditionId: String! @index
   indexSets: [BigInt!]!
-  payout: BigInt!
+  payout: BigInt! @config(precision: 38)
   txFrom: String!
   timestamp: Int! @index
   blockNumber: Int!
@@ -642,4 +642,33 @@ type V2CtfAdapterStats {
   totalSplitVolume: BigInt!
   totalMergeVolume: BigInt!
   totalRedemptionPayout: BigInt!
+}
+
+## ============================================================
+## Aggregates: user + builder rollups (Postgres only — mutable,
+## updated per fill; ClickHouse would version-explode)
+## ============================================================
+
+# Per-user trading rollup across V1 exchange, V2 exchange, and FPMM.
+# volume/trades/feesPaid count exchange + AMM fills where the user is the
+# attributed party (the maker — each real party appears exactly once as
+# maker). realizedPnl also includes splits/merges/redemptions, so it always
+# equals the sum of the user's UserPosition.realizedPnl.
+type UserStats {
+  id: ID!                              # user address
+  realizedPnl: BigInt!
+  volume: BigInt!                      # collateral units (6 decimals)
+  trades: BigInt!
+  feesPaid: BigInt!
+  lastTradeTimestamp: Int!
+}
+
+# Per-builder-code rollup from V2 OrderFilled (on-chain builder attribution).
+type BuilderStats {
+  id: ID!                              # builder code (bytes32)
+  fills: BigInt!
+  volume: BigInt!                      # collateral units (6 decimals)
+  fees: BigInt!
+  firstSeenAt: Int!
+  lastSeenAt: Int!
 }

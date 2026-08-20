@@ -6,6 +6,7 @@ import {
   updateUserPositionWithBuy,
   updateUserPositionWithSell,
 } from "../../utils/pnl.js";
+import { recordUserTrade, recordBuilderFill } from "../../utils/stats.js";
 
 const ZERO_BYTES32 =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -131,6 +132,26 @@ indexer.onEvent(
         event.params.tokenId,
         price,
         baseAmount,
+      );
+    }
+
+    // Per-user rollup (maker-side, matching the PnL booking above)
+    await recordUserTrade(
+      context,
+      event.params.maker,
+      quoteAmount,
+      event.params.fee,
+      event.block.timestamp,
+    );
+
+    // Per-builder rollup from the on-chain builder code
+    if (hasBuilder) {
+      await recordBuilderFill(
+        context,
+        event.params.builder,
+        quoteAmount,
+        event.params.fee,
+        event.block.timestamp,
       );
     }
   },

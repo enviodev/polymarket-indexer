@@ -1,4 +1,5 @@
 import { indexer } from "envio";
+import { getEventKey } from "../utils/negRisk.js";
 import { NEG_RISK_FEE_MODULE } from "../utils/constants.js";
 
 indexer.onEvent(
@@ -8,7 +9,7 @@ indexer.onEvent(
       event.srcAddress.toLowerCase() === NEG_RISK_FEE_MODULE.toLowerCase();
 
     context.FeeRefunded.set({
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      id: getEventKey(event.block.number, event.logIndex),
       orderHash: event.params.orderHash,
       tokenId: event.params.id.toString(),
       timestamp: event.block.timestamp,

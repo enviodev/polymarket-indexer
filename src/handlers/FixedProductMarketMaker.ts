@@ -14,6 +14,7 @@ import {
   computeFpmmPrice,
 } from "../utils/pnl.js";
 import { getEventKey } from "../utils/negRisk.js";
+import { recordUserTrade } from "../utils/stats.js";
 
 const COLLATERAL_SCALE_DEC = 1_000_000;
 
@@ -122,6 +123,15 @@ indexer.onEvent(
       }
     }
   }
+
+  // Per-user rollup (buyer pays investmentAmount in collateral)
+  await recordUserTrade(
+    context,
+    event.params.buyer,
+    event.params.investmentAmount,
+    event.params.feeAmount,
+    event.block.timestamp,
+  );
   },
 );
 
@@ -213,6 +223,15 @@ indexer.onEvent(
       }
     }
   }
+
+  // Per-user rollup (seller receives returnAmount in collateral)
+  await recordUserTrade(
+    context,
+    event.params.seller,
+    event.params.returnAmount,
+    event.params.feeAmount,
+    event.block.timestamp,
+  );
   },
 );
 

@@ -1,4 +1,5 @@
 import { COLLATERAL_SCALE } from "./constants.js";
+import { recordRealizedPnl } from "./stats.js";
 
 export function getUserPositionEntityId(
   user: string,
@@ -78,6 +79,9 @@ export async function updateUserPositionWithSell(
     realizedPnl: userPosition.realizedPnl + deltaPnL,
     amount: userPosition.amount - adjustedAmount,
   });
+
+  // Keep the per-user rollup in lockstep with the per-position ledger
+  await recordRealizedPnl(context, user, deltaPnL);
 }
 
 /**

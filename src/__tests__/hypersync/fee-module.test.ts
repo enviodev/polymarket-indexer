@@ -24,7 +24,7 @@ describe("HyperSync - FeeModule", () => {
     // FeeRefunded entities may appear in changes or only via entity API
     if (feeRefundedSets.length > 0) {
       for (const fr of feeRefundedSets) {
-        expect(fr.id).toMatch(/^\d+_\d+_\d+$/);
+        expect(fr.id).toMatch(/^\d+_\d+$/); // block_logIndex (entities are chain-scoped)
         expect(typeof fr.orderHash).toBe("string");
         expect(fr.orderHash).toMatch(/^0x[a-f0-9]/);
         expect(typeof fr.tokenId).toBe("string");
