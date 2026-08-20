@@ -34,6 +34,10 @@ The indexer runs on envio 3.7 with a split storage backend (`storage:` in
   not queryable over GraphQL; query ClickHouse directly for analytics.
 - `V2OrderFill` / `V2OrderMatch` are written to **both**: Postgres powers the
   live trade feed and `V2Market` relations, ClickHouse the analytics.
+- `clickhouse/candles.sql` adds an OHLCV layer: 1-minute candles per outcome
+  token, maintained by materialized views over both fill streams. See
+  [docs/clickhouse-queries.md](docs/clickhouse-queries.md) for the query
+  cookbook (candles, volume, activity feeds, builder analytics).
 
 ## Architecture
 
@@ -112,6 +116,7 @@ The schema defines 25+ entity types across all domains:
 - **Open Interest**: `Condition`, `MarketOpenInterest`, `GlobalOpenInterest`, `NegRiskEvent`
 - **Activity**: `Split`, `Merge`, `Redemption`, `NegRiskConversion`, `Position`
 - **PnL**: `UserPosition` (tracks amount, avgPrice, realizedPnl, totalBought per user per token)
+- **Aggregates**: `UserStats` (per-user realized PnL, volume, trades, fees across V1+V2+FPMM), `BuilderStats` (per V2 builder code: fills, volume, fees)
 - **FPMM**: `FixedProductMarketMaker`, `FpmmTransaction`, `FpmmFundingAddition`, `FpmmFundingRemoval`, `FpmmPoolMembership`, `Collateral`
 - **Wallet**: `Wallet` (registry; balances live in `V2PolyUSDAccount`)
 - **Fee Module**: `FeeRefunded`

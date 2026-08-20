@@ -7,6 +7,8 @@ import {
   updateUserPositionWithBuy,
   updateUserPositionWithSell,
 } from "../utils/pnl.js";
+import { recordUserTrade } from "../utils/stats.js";
+import { getEventKey } from "../utils/negRisk.js";
 import { COLLATERAL_SCALE } from "../utils/constants.js";
 import { scaleBigInt, ZERO_BD } from "../utils/fpmm.js";
 import { getMarketMetadata } from "../effects/marketMetadata.js";
@@ -85,7 +87,7 @@ indexer.onEvent(
     side === TRADE_TYPE_BUY ? takerAssetId.toString() : makerAssetId.toString();
 
   // Record OrderFilledEvent
-  const eventId = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+  const eventId = getEventKey(event.block.number, event.logIndex);
   context.OrderFilledEvent.set({
     id: eventId,
     transactionHash: event.transaction.hash,
@@ -152,6 +154,15 @@ indexer.onEvent(
       order.baseAmount,
     );
   }
+
+  // Per-user rollup: same maker-side attribution as the PnL booking above
+  await recordUserTrade(
+    context,
+    order.account,
+    order.quoteAmount,
+    event.params.fee,
+    event.block.timestamp,
+  );
   },
 );
 
@@ -170,7 +181,7 @@ indexer.onEvent(
 
   // Record OrdersMatchedEvent
   context.OrdersMatchedEvent.set({
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+    id: getEventKey(event.block.number, event.logIndex),
     timestamp: event.block.timestamp,
     makerAssetID: event.params.makerAssetId,
     takerAssetID: event.params.takerAssetId,

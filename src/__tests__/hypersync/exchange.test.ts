@@ -110,7 +110,7 @@ describe("HyperSync - Exchange", () => {
 
     // Validate OrderFilledEvent field quality
     for (const ofe of orderFilledSets) {
-      expect(ofe.id).toMatch(/^\d+_\d+_\d+$/); // chainId_block_logIndex format
+      expect(ofe.id).toMatch(/^\d+_\d+$/); // block_logIndex (entities are chain-scoped)
       expect(ofe.transactionHash).toMatch(/^0x[a-f0-9]{64}$/);
       expect(typeof ofe.timestamp).toBe("number");
       expect(ofe.timestamp).toBeGreaterThan(0);
